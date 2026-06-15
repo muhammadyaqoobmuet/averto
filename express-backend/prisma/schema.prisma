@@ -1,0 +1,124 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  organizations Organization[]
+  refreshTokens RefreshToken[]
+}
+
+model Organization {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  ownerId   String
+  createdAt DateTime  @default(now())
+  chatbots  Chatbot[]
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+}
+
+model Chatbot {
+  id             String         @id @default(uuid())
+  orgId          String
+  name           String
+  websiteUrl     String
+  status         String         @default("pending")
+  crawlJobId     String?
+  pagesCrawled   Int            @default(0)
+  systemPrompt   String?
+  welcomeMessage String         @default("Hi! How can I help?")
+  themeColor     String         @default("#18181b")
+  allowedDomains String[]       @default([])
+  apiKey         String         @unique @default(uuid())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  pageLimit      Int            @default(10)
+  crawlMeta      Json?
+  customModel    String? // e.g., "gpt-4o", "gemini-2.0-flash", "llama-3.3-70b-versatile"
+  customApiKey   String? // user's own API key
+  allowedOrigins String[]       @default([]) // CORS origins for widget embedding
+  organization   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  chunks         Chunk[]
+  conversations  Conversation[]
+  pages          CrawlPage[]
+  missedQueries  MissedQuery[]
+}
+
+model CrawlPage {
+  id         String   @id @default(uuid())
+  chatbotId  String
+  url        String
+  title      String?
+  crawledAt  DateTime @default(now())
+  sourceType String   @default("crawl")
+  chunks     Chunk[]
+  chatbot    Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+}
+
+model Chunk {
+  id          String                   @id @default(uuid())
+  chatbotId   String
+  pageId      String
+  content     String
+  heading     String?
+  embedding   Unsupported("vector")?
+  createdAt   DateTime                 @default(now())
+  content_tsv Unsupported("tsvector")? @default(dbgenerated("to_tsvector('english'::regconfig, ((COALESCE(content, ''::text) || ' '::text) || COALESCE(heading, ''::text)))"))
+  chatbot     Chatbot                  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  page        CrawlPage                @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([content_tsv], map: "chunk_content_tsv_idx", type: Gin)
+  @@index([embedding], map: "chunk_embedding_hnsw_idx")
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  chatbotId String
+  sessionId String
+  startedAt DateTime  @default(now())
+  chatbot   Chatbot   @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  messages  Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  role           String
+  content        String
+  topScore       Float?
+  sources        String[]
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model MissedQuery {
+  id        String   @id @default(uuid())
+  chatbotId String
+  query     String
+  topScore  Float?
+  sessionId String?
+  askedAt   DateTime @default(now())
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

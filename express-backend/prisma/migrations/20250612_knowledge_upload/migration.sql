@@ -1,0 +1,4 @@
+-- Knowledge base improvements
+ALTER TABLE "Chatbot" ADD COLUMN IF NOT EXISTS "pageLimit" INTEGER NOT NULL DEFAULT 10;
+ALTER TABLE "Chatbot" ADD COLUMN IF NOT EXISTS "crawlMeta" JSONB;
+ALTER TABLE "CrawlPage" ADD COLUMN IF NOT EXISTS "sourceType" TEXT NOT NULL DEFAULT 'crawl';

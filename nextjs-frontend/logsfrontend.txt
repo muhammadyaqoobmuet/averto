@@ -1,0 +1,9 @@
+
+> nextjs-frontend@0.1.0 dev
+> next devPP
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.100.218:3000
+- Environments: .env.local
+✓ Ready in 428ms
