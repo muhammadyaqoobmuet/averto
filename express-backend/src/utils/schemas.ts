@@ -18,19 +18,34 @@ export const createChatbotSchema = z.object({
   pageLimit: z.number().int().min(1).max(200).optional(),
 });
 
+const hexColor = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/)
+  .optional();
+
+export const widgetConfigSchema = z
+  .object({
+    bubbleColor: hexColor,
+    chatBgColor: hexColor,
+    position: z.enum(["bottom-right", "bottom-left"]).optional(),
+    borderRadius: z.enum(["sharp", "soft", "rounded", "pill"]).optional(),
+    darkMode: z.boolean().optional(),
+    blur: z.boolean().optional(),
+    showBranding: z.boolean().optional(),
+  })
+  .optional();
+
 export const updateChatbotSchema = z.object({
   name: z.string().min(1).optional(),
   welcomeMessage: z.string().min(1).optional(),
-  themeColor: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/)
-    .optional(),
+  themeColor: hexColor,
   systemPrompt: z.string().optional(),
   allowedDomains: z.array(z.string()).optional(),
   pageLimit: z.number().int().min(1).max(200).optional(),
   customModel: z.string().optional(),
   customApiKey: z.string().optional(),
   allowedOrigins: z.array(z.string()).optional(),
+  widgetConfig: widgetConfigSchema,
 });
 
 export const uploadDocumentSchema = z.object({

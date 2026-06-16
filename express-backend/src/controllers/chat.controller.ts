@@ -3,7 +3,7 @@ import { retrieveContext } from "../services/retrieval.service";
 import { generateAnswer, SearchChunk } from "../services/llm.service";
 import prisma from "../lib/prisma";
 
-const MISSED_QUERY_THRESHOLD = 0.72;
+const MISSED_QUERY_THRESHOLD = 0.35;
 const LOW_CONFIDENCE_THRESHOLD = 0.45;
 
 // Hard cap on the whole retrieval pipeline.
@@ -54,6 +54,26 @@ export const chat = async (req: Request, res: Response) => {
       include: { organization: true },
     });
     if (!chatbot) return res.status(404).json({ error: "Chatbot not found" });
+
+    // Enforce allowedOrigins: if the chatbot has an origin whitelist, reject
+    // requests from unlisted origins. This is the server-side guard — CORS
+    // only handles browser enforcement; this protects the API itself.
+    const requestOrigin = req.headers.origin;
+    if (
+      chatbot.allowedOrigins &&
+      chatbot.allowedOrigins.length > 0 &&
+      requestOrigin
+    ) {
+      const normalized = chatbot.allowedOrigins.map((o) =>
+        o.replace(/\/$/, ""),
+      );
+      const incomingNorm = requestOrigin.replace(/\/$/, "");
+      if (!normalized.includes(incomingNorm)) {
+        return res
+          .status(403)
+          .json({ error: "Origin not allowed for this chatbot" });
+      }
+    }
 
     if (!["ready", "indexing"].includes(chatbot.status)) {
       return res.status(503).json({

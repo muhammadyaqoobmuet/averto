@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import WidgetPreview from "@/components/WidgetPreview";
+import WidgetPreview, { WidgetConfig } from "@/components/WidgetPreview";
 import KnowledgeUpload from "@/components/KnowledgeUpload";
 import { apiFetch } from "@/lib/api";
 import GapTab from "./components/GapTab";
 import ActivityTab from "./components/ActivityTab";
+import AnalyticsTab from "./components/AnalyticsTab";
 import ModelSettings from "./components/ModelSettings";
+import { useToast } from "@/components/Toaster";
 
 interface Chatbot {
   id: string;
@@ -25,6 +27,7 @@ interface Chatbot {
   customModel?: string;
   customApiKey?: string;
   allowedOrigins?: string[];
+  widgetConfig?: WidgetConfig | null;
 }
 
 interface CrawlMeta {
@@ -67,6 +70,7 @@ type Tab =
   | "insights"
   | "knowledge"
   | "activity"
+  | "analytics"
   | "settings";
 
 const VALID_TABS: Tab[] = [
@@ -75,6 +79,7 @@ const VALID_TABS: Tab[] = [
   "insights",
   "knowledge",
   "activity",
+  "analytics",
   "settings",
 ];
 
@@ -109,8 +114,8 @@ export default function ChatbotStudioContent() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [origin, setOrigin] = useState("");
+  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
@@ -121,6 +126,15 @@ export default function ChatbotStudioContent() {
   const [recrawling, setRecrawling] = useState(false);
   const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
   const [allowedOriginsText, setAllowedOriginsText] = useState("");
+  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>({
+    bubbleColor: undefined,
+    chatBgColor: undefined,
+    position: "bottom-right",
+    borderRadius: "soft",
+    darkMode: false,
+    blur: false,
+    showBranding: true,
+  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -139,6 +153,9 @@ export default function ChatbotStudioContent() {
       setSystemPrompt(data.systemPrompt || "");
       setPageLimit(data.pageLimit ?? 10);
       setAllowedOriginsText((data.allowedOrigins || []).join("\n"));
+      if (data.widgetConfig && typeof data.widgetConfig === "object") {
+        setWidgetConfig(data.widgetConfig as WidgetConfig);
+      }
 
       if (pagesRes.ok) {
         setPages(await pagesRes.json());
@@ -183,7 +200,6 @@ export default function ChatbotStudioContent() {
 
   const handleSave = async () => {
     setSaving(true);
-    setSaved(false);
 
     try {
       const res = await apiFetch(`/api/chatbots/${id}`, {
@@ -195,13 +211,19 @@ export default function ChatbotStudioContent() {
           themeColor,
           systemPrompt: systemPrompt || undefined,
           pageLimit,
+          widgetConfig,
         }),
       });
       if (res.ok) {
         const updated = await res.json();
         setChatbot((prev) => (prev ? { ...prev, ...updated } : prev));
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        toast({ type: "success", title: "Changes saved" });
+      } else {
+        toast({
+          type: "error",
+          title: "Save failed",
+          description: "Please try again.",
+        });
       }
     } finally {
       setSaving(false);
@@ -215,7 +237,12 @@ export default function ChatbotStudioContent() {
       const res = await apiFetch(`/api/chatbots/${id}/pages/${pageId}`, {
         method: "DELETE",
       });
-      if (res.ok) fetchData();
+      if (res.ok) {
+        toast({ type: "success", title: "Source removed" });
+        fetchData();
+      } else {
+        toast({ type: "error", title: "Delete failed" });
+      }
     } finally {
       setDeletingPageId(null);
     }
@@ -233,7 +260,14 @@ export default function ChatbotStudioContent() {
       const res = await apiFetch(`/api/chatbots/${id}/recrawl`, {
         method: "POST",
       });
-      if (res.ok) fetchData();
+      if (res.ok) {
+        toast({
+          type: "success",
+          title: "Re-crawl queued",
+          description: "Your site is being re-indexed.",
+        });
+        fetchData();
+      }
     } finally {
       setRecrawling(false);
     }
@@ -244,11 +278,14 @@ export default function ChatbotStudioContent() {
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-    await apiFetch(`/api/chatbots/${chatbotId}`, {
+    const res = await apiFetch(`/api/chatbots/${chatbotId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ allowedOrigins: origins }),
     });
+    if (res.ok) {
+      toast({ type: "success", title: "Allowed origins saved" });
+    }
     fetchData();
   };
 
@@ -269,12 +306,20 @@ export default function ChatbotStudioContent() {
   }
 
   const status = STATUS_LABEL[chatbot.status] || STATUS_LABEL.pending;
+  const cfg = widgetConfig;
   const scriptCode = `<script
   src="${origin}/widget.js"
   data-api-key="${chatbot.apiKey}"
   data-bot-name="${name}"
   data-welcome-message="${welcomeMessage.replace(/"/g, "&quot;")}"
   data-primary-color="${themeColor}"
+  data-bubble-color="${cfg.bubbleColor || themeColor}"
+  data-chat-bg="${cfg.chatBgColor || (cfg.darkMode ? "#111827" : "#ffffff")}"
+  data-blur="${cfg.blur ? "true" : "false"}"
+  data-dark-mode="${cfg.darkMode ? "true" : "false"}"
+  data-position="${cfg.position || "bottom-right"}"
+  data-border-radius="${cfg.borderRadius || "soft"}"
+  data-show-branding="${cfg.showBranding !== false ? "true" : "false"}"
   defer
 ></script>`;
 
@@ -282,13 +327,14 @@ export default function ChatbotStudioContent() {
     { id: "customize", label: "Customize" },
     { id: "knowledge", label: "Knowledge" },
     { id: "insights", label: "Insights" },
+    { id: "analytics", label: "Analytics" },
     { id: "activity", label: "Activity" },
     { id: "embed", label: "Embed" },
     { id: "settings", label: "Settings" },
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="shrink-0 px-8 py-5 border-b border-[var(--border)] flex items-start justify-between gap-4">
           <div>
@@ -315,7 +361,7 @@ export default function ChatbotStudioContent() {
             disabled={saving}
             className="shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
-            {saving ? "Saving…" : saved ? "Saved" : "Save changes"}
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </header>
 
@@ -340,9 +386,10 @@ export default function ChatbotStudioContent() {
         <div className="flex-1 overflow-y-auto custom-scrollbar px-8 py-6">
           {tab === "customize" && (
             <div className="max-w-xl space-y-6">
-              <section className="space-y-4">
+              {/* ── Identity ─────────────────────────────── */}
+              <section className="space-y-3">
                 <h2 className="text-[13px] font-semibold text-[var(--text)]">
-                  Appearance
+                  Identity
                 </h2>
                 <div className="space-y-4 p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
                   <div>
@@ -366,17 +413,30 @@ export default function ChatbotStudioContent() {
                       className="w-full px-3 py-2.5 text-[13px] rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--border-strong)] transition-colors resize-none"
                     />
                   </div>
+                </div>
+              </section>
+
+              {/* ── Colors ───────────────────────────────── */}
+              <section className="space-y-3">
+                <h2 className="text-[13px] font-semibold text-[var(--text)]">
+                  Colors
+                </h2>
+                <div className="space-y-5 p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+                  {/* Accent color */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-2">
-                      Brand color
+                    <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-0.5">
+                      Accent color
                     </label>
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <p className="text-[11px] text-[var(--text-muted)] mb-2">
+                      Used for user messages and the Send button
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-2">
                       {PRESET_COLORS.map((c) => (
                         <button
                           key={c}
                           type="button"
                           onClick={() => setThemeColor(c)}
-                          className={`w-8 h-8 rounded-lg border-2 transition-transform hover:scale-105 ${
+                          className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-105 ${
                             themeColor === c
                               ? "border-[var(--text)] scale-105"
                               : "border-transparent"
@@ -392,10 +452,325 @@ export default function ChatbotStudioContent() {
                       className="w-full h-9 rounded-lg cursor-pointer bg-transparent"
                     />
                   </div>
+
+                  <div className="h-px bg-[var(--border)]" />
+
+                  {/* Bubble / launcher color */}
+                  <div>
+                    <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-0.5">
+                      Launcher button
+                    </label>
+                    <p className="text-[11px] text-[var(--text-muted)] mb-2">
+                      The floating chat button on your site
+                    </p>
+                    <label className="flex items-center gap-2 mb-3 cursor-pointer w-fit">
+                      <input
+                        type="checkbox"
+                        checked={widgetConfig.bubbleColor === undefined}
+                        onChange={(e) =>
+                          setWidgetConfig((prev) => ({
+                            ...prev,
+                            bubbleColor: e.target.checked
+                              ? undefined
+                              : themeColor,
+                          }))
+                        }
+                        className="rounded border-[var(--border)] accent-[var(--text)]"
+                      />
+                      <span className="text-[12px] text-[var(--text-secondary)]">
+                        Same as accent
+                      </span>
+                    </label>
+                    {widgetConfig.bubbleColor !== undefined && (
+                      <>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {PRESET_COLORS.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() =>
+                                setWidgetConfig((prev) => ({
+                                  ...prev,
+                                  bubbleColor: c,
+                                }))
+                              }
+                              className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-105 ${
+                                widgetConfig.bubbleColor === c
+                                  ? "border-[var(--text)] scale-105"
+                                  : "border-transparent"
+                              }`}
+                              style={{ background: c }}
+                            />
+                          ))}
+                        </div>
+                        <input
+                          type="color"
+                          value={widgetConfig.bubbleColor || themeColor}
+                          onChange={(e) =>
+                            setWidgetConfig((prev) => ({
+                              ...prev,
+                              bubbleColor: e.target.value,
+                            }))
+                          }
+                          className="w-full h-9 rounded-lg cursor-pointer bg-transparent"
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <div className="h-px bg-[var(--border)]" />
+
+                  {/* Chat background */}
+                  <div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label className="text-[12px] font-medium text-[var(--text-secondary)]">
+                        Messages area background
+                      </label>
+                      {widgetConfig.chatBgColor !== undefined && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setWidgetConfig((prev) => ({
+                              ...prev,
+                              chatBgColor: undefined,
+                            }))
+                          }
+                          className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                        >
+                          Default
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[var(--text-muted)] mb-2">
+                      Leave default to inherit from theme
+                    </p>
+                    <input
+                      type="color"
+                      value={
+                        widgetConfig.chatBgColor ||
+                        (widgetConfig.darkMode ? "#111827" : "#ffffff")
+                      }
+                      onChange={(e) =>
+                        setWidgetConfig((prev) => ({
+                          ...prev,
+                          chatBgColor: e.target.value,
+                        }))
+                      }
+                      className="w-full h-9 rounded-lg cursor-pointer bg-transparent"
+                    />
+                  </div>
                 </div>
               </section>
 
-              <section className="space-y-4">
+              {/* ── Style ────────────────────────────────── */}
+              <section className="space-y-3">
+                <h2 className="text-[13px] font-semibold text-[var(--text)]">
+                  Style
+                </h2>
+                <div className="space-y-5 p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+                  {/* Theme toggle */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-[12px] font-medium text-[var(--text-secondary)]">
+                      Theme
+                    </p>
+                    <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg)] border border-[var(--border)]">
+                      {(["Light", "Dark"] as const).map((mode) => {
+                        const isDark = mode === "Dark";
+                        const active =
+                          isDark === (widgetConfig.darkMode ?? false);
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() =>
+                              setWidgetConfig((prev) => ({
+                                ...prev,
+                                darkMode: isDark,
+                              }))
+                            }
+                            className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                              active
+                                ? "bg-[var(--surface)] text-[var(--text)] shadow-sm border border-[var(--border)]"
+                                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-[var(--border)]" />
+
+                  {/* Glass effect toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[12px] font-medium text-[var(--text-secondary)]">
+                        Glass effect
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Frosted glass background
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={widgetConfig.blur ?? false}
+                      onClick={() =>
+                        setWidgetConfig((prev) => ({
+                          ...prev,
+                          blur: !prev.blur,
+                        }))
+                      }
+                      className={`relative w-10 h-6 rounded-full transition-colors ${
+                        widgetConfig.blur
+                          ? "bg-[var(--text)]"
+                          : "bg-[var(--border-strong)]"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                          widgetConfig.blur ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="h-px bg-[var(--border)]" />
+
+                  {/* Corner radius */}
+                  <div>
+                    <p className="text-[12px] font-medium text-[var(--text-secondary)] mb-3">
+                      Corner radius
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { value: "sharp" as const, label: "Sharp", rx: 2 },
+                        { value: "soft" as const, label: "Soft", rx: 8 },
+                        { value: "rounded" as const, label: "Rounded", rx: 14 },
+                        { value: "pill" as const, label: "Pill", rx: 24 },
+                      ].map(({ value, label, rx }) => {
+                        const active =
+                          (widgetConfig.borderRadius ?? "soft") === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() =>
+                              setWidgetConfig((prev) => ({
+                                ...prev,
+                                borderRadius: value,
+                              }))
+                            }
+                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border text-[11px] font-medium transition-all ${
+                              active
+                                ? "border-[var(--text)] text-[var(--text)] bg-[var(--bg)]"
+                                : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
+                            }`}
+                          >
+                            <span
+                              className={`w-7 h-7 border-2 ${
+                                active
+                                  ? "border-[var(--text)]"
+                                  : "border-[var(--border-strong)]"
+                              }`}
+                              style={{ borderRadius: rx }}
+                            />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-[var(--border)]" />
+
+                  {/* Widget position */}
+                  <div>
+                    <p className="text-[12px] font-medium text-[var(--text-secondary)] mb-3">
+                      Widget position
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        {
+                          value: "bottom-right" as const,
+                          label: "Bottom-right",
+                        },
+                        { value: "bottom-left" as const, label: "Bottom-left" },
+                      ].map(({ value, label }) => {
+                        const active =
+                          (widgetConfig.position ?? "bottom-right") === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() =>
+                              setWidgetConfig((prev) => ({
+                                ...prev,
+                                position: value,
+                              }))
+                            }
+                            className={`py-2.5 px-3 rounded-lg border text-[12px] font-medium transition-all ${
+                              active
+                                ? "border-[var(--text)] text-[var(--text)] bg-[var(--bg)]"
+                                : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Branding ─────────────────────────────── */}
+              <section className="space-y-3">
+                <h2 className="text-[13px] font-semibold text-[var(--text)]">
+                  Branding
+                </h2>
+                <div className="p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[12px] font-medium text-[var(--text-secondary)]">
+                        Show branding
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Display &apos;Powered by ChatEmbed&apos; in the widget
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={widgetConfig.showBranding !== false}
+                      onClick={() =>
+                        setWidgetConfig((prev) => ({
+                          ...prev,
+                          showBranding: !(prev.showBranding !== false),
+                        }))
+                      }
+                      className={`relative w-10 h-6 rounded-full transition-colors ${
+                        widgetConfig.showBranding !== false
+                          ? "bg-[var(--text)]"
+                          : "bg-[var(--border-strong)]"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                          widgetConfig.showBranding !== false
+                            ? "translate-x-4"
+                            : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Behavior ─────────────────────────────── */}
+              <section className="space-y-3">
                 <h2 className="text-[13px] font-semibold text-[var(--text)]">
                   Behavior
                 </h2>
@@ -785,6 +1160,8 @@ export default function ChatbotStudioContent() {
 
           {tab === "activity" && <ActivityTab chatbotId={chatbotId} />}
 
+          {tab === "analytics" && <AnalyticsTab chatbotId={chatbotId} />}
+
           {tab === "settings" && (
             <div className="space-y-8">
               <ModelSettings
@@ -828,6 +1205,7 @@ export default function ChatbotStudioContent() {
           botName={name}
           welcomeMessage={welcomeMessage}
           themeColor={themeColor}
+          widgetConfig={widgetConfig}
           botStatus={chatbot.status}
         />
       </aside>

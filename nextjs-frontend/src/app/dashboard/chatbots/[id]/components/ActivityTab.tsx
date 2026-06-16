@@ -1,22 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 interface ConvMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   createdAt: string;
 }
 
+// Shape returned by GET /api/chatbots/:id/conversations
 interface Conversation {
   id: string;
   sessionId: string;
-  messages: ConvMessage[];
-  createdAt: string;
-  updatedAt?: string;
+  startedAt: string;
+  messageCount: number;
+  lastMessage: {
+    content: string;
+    createdAt: string;
+    role: "user" | "assistant";
+  } | null;
 }
 
 interface ActivityTabProps {
@@ -28,12 +33,14 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Record<string, ConvMessage[]>>({});
+  const [loadingMessages, setLoadingMessages] = useState<string | null>(null);
 
   const fetchConversations = useCallback(
     async (pageNum: number, append = false) => {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) return;
       if (append) setLoadingMore(true);
       else setLoading(true);
@@ -46,21 +53,20 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
         if (!res.ok) return;
 
         const raw = await res.json();
-        // Handle both array response and { conversations: [...] } shape
+        // API returns { data: [...], total, page, limit, totalPages }
         const list: Conversation[] = Array.isArray(raw)
           ? raw
-          : Array.isArray(raw.conversations)
-            ? raw.conversations
+          : Array.isArray(raw.data)
+            ? raw.data
             : [];
 
         if (append) {
-          setConversations(prev => [...prev, ...list]);
+          setConversations((prev) => [...prev, ...list]);
         } else {
           setConversations(list);
         }
 
-        // If fewer than 20 returned, no more pages
-        setHasMore(list.length === 20);
+        setTotalPages(raw.totalPages ?? 1);
       } catch {
         /* ignore */
       } finally {
@@ -81,8 +87,33 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
     fetchConversations(next, true);
   };
 
+  const fetchMessages = async (convId: string) => {
+    if (messages[convId]) return; // already loaded
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    setLoadingMessages(convId);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/chatbots/${chatbotId}/conversations/${convId}/messages`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) return;
+      const data: ConvMessage[] = await res.json();
+      setMessages((prev) => ({ ...prev, [convId]: data }));
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMessages(null);
+    }
+  };
+
   const toggleExpand = (id: string) => {
-    setExpandedId(prev => (prev === id ? null : id));
+    if (expandedId === id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(id);
+      fetchMessages(id);
+    }
   };
 
   if (loading) {
@@ -96,7 +127,9 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
   return (
     <div className="max-w-3xl space-y-5 animate-fade-up">
       <div>
-        <h2 className="text-[13px] font-semibold text-[var(--text)]">Conversations</h2>
+        <h2 className="text-[13px] font-semibold text-[var(--text)]">
+          Conversations
+        </h2>
         <p className="text-[13px] text-[var(--text-muted)] mt-0.5">
           Full message threads from your widget
         </p>
@@ -105,21 +138,36 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
       {conversations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] p-12 text-center">
           <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center">
-            <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            <svg
+              className="w-5 h-5 text-[var(--text-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
           </div>
-          <p className="text-[14px] font-medium text-[var(--text)]">No conversations yet</p>
+          <p className="text-[14px] font-medium text-[var(--text)]">
+            No conversations yet
+          </p>
           <p className="text-[13px] text-[var(--text-muted)] mt-1 max-w-sm mx-auto">
-            Share your chatbot widget to get started. Conversations will appear here in real time.
+            Share your chatbot widget to get started. Conversations will appear
+            here in real time.
           </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {conversations.map(conv => {
-            const msgCount = conv.messages?.length ?? 0;
-            const lastMsg = conv.messages?.[conv.messages.length - 1];
+          {conversations.map((conv) => {
+            const msgCount = conv.messageCount ?? 0;
+            const lastMsg = conv.lastMessage;
             const isExpanded = expandedId === conv.id;
+            const convMessages = messages[conv.id];
+            const isLoadingMsg = loadingMessages === conv.id;
 
             return (
               <div
@@ -133,8 +181,18 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
                 >
                   {/* Session indicator */}
                   <div className="w-8 h-8 shrink-0 rounded-lg bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center">
-                    <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg
+                      className="w-4 h-4 text-[var(--text-muted)]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.75}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
                     </svg>
                   </div>
 
@@ -146,13 +204,15 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
                           : conv.sessionId}
                       </span>
                       <span className="shrink-0 text-[10px] font-medium text-[var(--text-muted)] px-1.5 py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)]">
-                        {msgCount} msg{msgCount !== 1 ? 's' : ''}
+                        {msgCount} msg{msgCount !== 1 ? "s" : ""}
                       </span>
                     </div>
                     {lastMsg && (
                       <p className="text-[12px] text-[var(--text-muted)] truncate">
-                        <span className={`font-medium mr-1 ${lastMsg.role === 'user' ? 'text-[var(--text-secondary)]' : 'text-[var(--success)]'}`}>
-                          {lastMsg.role === 'user' ? 'User:' : 'Bot:'}
+                        <span
+                          className={`font-medium mr-1 ${lastMsg.role === "user" ? "text-[var(--text-secondary)]" : "text-[var(--success)]"}`}
+                        >
+                          {lastMsg.role === "user" ? "User:" : "Bot:"}
                         </span>
                         {lastMsg.content}
                       </p>
@@ -161,16 +221,20 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
 
                   <div className="shrink-0 flex items-center gap-2">
                     <span className="text-[11px] text-[var(--text-muted)]">
-                      {new Date(conv.createdAt).toLocaleDateString()}
+                      {new Date(conv.startedAt).toLocaleDateString()}
                     </span>
                     <svg
-                      className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isExpanded ? "rotate-180" : ""}`}
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                       strokeWidth={1.75}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </button>
@@ -178,21 +242,25 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
                 {/* Expanded message thread */}
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-1 border-t border-[var(--border)] space-y-3 bg-[var(--bg)]">
-                    {msgCount === 0 ? (
+                    {isLoadingMsg ? (
+                      <div className="flex justify-center py-4">
+                        <div className="w-4 h-4 border-2 border-[var(--border-strong)] border-t-[var(--text)] rounded-full animate-spin" />
+                      </div>
+                    ) : !convMessages || convMessages.length === 0 ? (
                       <p className="text-[12px] text-[var(--text-muted)] py-3 text-center">
                         No messages in this conversation
                       </p>
                     ) : (
-                      conv.messages.map(msg => (
+                      convMessages.map((msg) => (
                         <div
                           key={msg.id}
-                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                         >
                           <div
                             className={`max-w-[80%] px-3.5 py-2.5 rounded-xl text-[13px] leading-relaxed ${
-                              msg.role === 'user'
-                                ? 'bg-[var(--text)] text-[var(--accent-fg)] rounded-tr-sm'
-                                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-tl-sm'
+                              msg.role === "user"
+                                ? "bg-[var(--text)] text-[var(--accent-fg)] rounded-tr-sm"
+                                : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-tl-sm"
                             }`}
                           >
                             {msg.content}
@@ -201,7 +269,7 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
                       ))
                     )}
                     <p className="text-[10px] text-[var(--text-muted)] text-center pt-1">
-                      {new Date(conv.createdAt).toLocaleString()}
+                      {new Date(conv.startedAt).toLocaleString()}
                     </p>
                   </div>
                 )}
@@ -210,7 +278,7 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
           })}
 
           {/* Load more */}
-          {hasMore && (
+          {page < totalPages && (
             <div className="pt-2 flex justify-center">
               <button
                 onClick={handleLoadMore}
@@ -223,7 +291,7 @@ export default function ActivityTab({ chatbotId }: ActivityTabProps) {
                     Loading…
                   </>
                 ) : (
-                  'Load more'
+                  "Load more"
                 )}
               </button>
             </div>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "@/components/Providers";
+import { Toaster } from "@/components/Toaster";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -38,7 +40,12 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
+      </body>
     </html>
   );
 }

@@ -108,6 +108,7 @@ export const getChatbotStatus = async (req: AuthRequest, res: Response) => {
       allowedDomains: true,
       pageLimit: true,
       crawlMeta: true,
+      widgetConfig: true,
     },
   });
 
@@ -143,6 +144,7 @@ export const updateChatbot = async (req: AuthRequest, res: Response) => {
         systemPrompt: true,
         allowedDomains: true,
         pageLimit: true,
+        widgetConfig: true,
       },
     });
 
@@ -456,6 +458,36 @@ export const getGapReport = async (req: AuthRequest, res: Response) => {
   res.setHeader("Content-Type", "text/csv");
   res.setHeader("Content-Disposition", "attachment; filename=gap-report.csv");
   res.send(csvRows.join("\n"));
+};
+
+/**
+ * Returns all messages for a single conversation.
+ * GET /api/chatbots/:id/conversations/:convId/messages
+ */
+export const getConversationMessages = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  const { id, convId } = req.params;
+
+  const chatbot = await prisma.chatbot.findFirst({
+    where: { id, organization: { ownerId: req.user!.userId } },
+  });
+  if (!chatbot) return res.status(404).json({ error: "Chatbot not found" });
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { id: convId, chatbotId: id },
+  });
+  if (!conversation)
+    return res.status(404).json({ error: "Conversation not found" });
+
+  const messages = await prisma.message.findMany({
+    where: { conversationId: convId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, role: true, content: true, createdAt: true },
+  });
+
+  res.json(messages);
 };
 
 /**

@@ -13,6 +13,7 @@ import {
   deletePage,
   recrawlChatbot,
   getConversations,
+  getConversationMessages,
   getGapReport,
 } from "../controllers/chatbot.controller";
 import { authenticate } from "../middleware/auth.middleware";
@@ -33,6 +34,7 @@ router.post("/:id/recrawl", recrawlChatbot);
 router.get("/:id/activity", getRecentActivity);
 router.get("/:id/missed-queries", getMissedQueries);
 router.get("/:id/conversations", getConversations);
+router.get("/:id/conversations/:convId/messages", getConversationMessages);
 router.get("/:id/gap-report", getGapReport);
 router.delete("/:id", deleteChatbot);
 
