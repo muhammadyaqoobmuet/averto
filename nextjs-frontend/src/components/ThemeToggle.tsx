@@ -5,6 +5,8 @@ import {
   useModeAnimation,
   ThemeAnimationType,
 } from "react-theme-switch-animation";
+import { useSound } from "@/hooks/use-sound";
+import { click002Sound } from "@/lib/click-002";
 
 function SunIcon() {
   return (
@@ -141,6 +143,8 @@ export default function ThemeToggle({ className = "" }: ThemeToggleProps) {
     setMounted(true);
   }, []);
 
+  const [playClick] = useSound(click002Sound);
+
   if (!mounted) {
     return (
       <div
@@ -153,7 +157,7 @@ export default function ThemeToggle({ className = "" }: ThemeToggleProps) {
   return (
     <button
       ref={ref}
-      onClick={toggleSwitchTheme}
+      onClick={() => { playClick(); toggleSwitchTheme(); }}
       aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}
       className={`w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)] transition-all duration-200 cursor-pointer ${className}`}
     >

@@ -371,11 +371,10 @@ export default function ChatbotStudioContent() {
               <button
                 key={t.id}
                 onClick={() => switchTab(t.id)}
-                className={`px-4 py-3 text-[13px] font-medium border-b-2 transition-colors ${
-                  tab === t.id
+                className={`px-4 py-3 text-[13px] font-medium border-b-2 transition-colors ${tab === t.id
                     ? "border-[var(--text)] text-[var(--text)]"
                     : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                  }`}
               >
                 {t.label}
               </button>
@@ -436,21 +435,33 @@ export default function ChatbotStudioContent() {
                           key={c}
                           type="button"
                           onClick={() => setThemeColor(c)}
-                          className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-105 ${
-                            themeColor === c
+                          className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-105 ${themeColor === c
                               ? "border-[var(--text)] scale-105"
                               : "border-transparent"
-                          }`}
+                            }`}
                           style={{ background: c }}
                         />
                       ))}
                     </div>
-                    <input
-                      type="color"
-                      value={themeColor}
-                      onChange={(e) => setThemeColor(e.target.value)}
-                      className="w-full h-9 rounded-lg cursor-pointer bg-transparent"
-                    />
+                    <label className="relative flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] cursor-pointer hover:border-[var(--border-strong)] transition-colors group">
+                      <input
+                        type="color"
+                        value={themeColor}
+                        onChange={(e) => setThemeColor(e.target.value)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <span
+                        className="w-9 h-9 rounded-md shrink-0 border border-black/10 shadow-sm"
+                        style={{ background: themeColor }}
+                      />
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[12px] font-semibold text-[var(--text)] font-mono uppercase">{themeColor}</span>
+                        <span className="block text-[11px] text-[var(--text-muted)] mt-0.5">Click to pick color</span>
+                      </span>
+                      <svg className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors relative z-10 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
+                    </label>
                   </div>
 
                   <div className="h-px bg-[var(--border)]" />
@@ -494,26 +505,38 @@ export default function ChatbotStudioContent() {
                                   bubbleColor: c,
                                 }))
                               }
-                              className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-105 ${
-                                widgetConfig.bubbleColor === c
+                              className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-105 ${widgetConfig.bubbleColor === c
                                   ? "border-[var(--text)] scale-105"
                                   : "border-transparent"
-                              }`}
+                                }`}
                               style={{ background: c }}
                             />
                           ))}
                         </div>
-                        <input
-                          type="color"
-                          value={widgetConfig.bubbleColor || themeColor}
-                          onChange={(e) =>
-                            setWidgetConfig((prev) => ({
-                              ...prev,
-                              bubbleColor: e.target.value,
-                            }))
-                          }
-                          className="w-full h-9 rounded-lg cursor-pointer bg-transparent"
-                        />
+                        <label className="relative flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] cursor-pointer hover:border-[var(--border-strong)] transition-colors group">
+                          <input
+                            type="color"
+                            value={widgetConfig.bubbleColor || themeColor}
+                            onChange={(e) =>
+                              setWidgetConfig((prev) => ({
+                                ...prev,
+                                bubbleColor: e.target.value,
+                              }))
+                            }
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <span
+                            className="w-9 h-9 rounded-md shrink-0 border border-black/10 shadow-sm"
+                            style={{ background: widgetConfig.bubbleColor || themeColor }}
+                          />
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[12px] font-semibold text-[var(--text)] font-mono uppercase">{widgetConfig.bubbleColor || themeColor}</span>
+                            <span className="block text-[11px] text-[var(--text-muted)] mt-0.5">Click to pick color</span>
+                          </span>
+                          <svg className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors relative z-10 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                          </svg>
+                        </label>
                       </>
                     )}
                   </div>
@@ -544,20 +567,30 @@ export default function ChatbotStudioContent() {
                     <p className="text-[11px] text-[var(--text-muted)] mb-2">
                       Leave default to inherit from theme
                     </p>
-                    <input
-                      type="color"
-                      value={
-                        widgetConfig.chatBgColor ||
-                        (widgetConfig.darkMode ? "#111827" : "#ffffff")
-                      }
-                      onChange={(e) =>
-                        setWidgetConfig((prev) => ({
-                          ...prev,
-                          chatBgColor: e.target.value,
-                        }))
-                      }
-                      className="w-full h-9 rounded-lg cursor-pointer bg-transparent"
-                    />
+                    <label className="relative flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] cursor-pointer hover:border-[var(--border-strong)] transition-colors group">
+                      <input
+                        type="color"
+                        value={widgetConfig.chatBgColor || (widgetConfig.darkMode ? "#111827" : "#ffffff")}
+                        onChange={(e) =>
+                          setWidgetConfig((prev) => ({
+                            ...prev,
+                            chatBgColor: e.target.value,
+                          }))
+                        }
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <span
+                        className="w-9 h-9 rounded-md shrink-0 border border-black/10 shadow-sm"
+                        style={{ background: widgetConfig.chatBgColor || (widgetConfig.darkMode ? "#111827" : "#ffffff") }}
+                      />
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[12px] font-semibold text-[var(--text)] font-mono uppercase">{widgetConfig.chatBgColor || (widgetConfig.darkMode ? "#111827" : "#ffffff")}</span>
+                        <span className="block text-[11px] text-[var(--text-muted)] mt-0.5">Click to pick color</span>
+                      </span>
+                      <svg className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors relative z-10 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
+                    </label>
                   </div>
                 </div>
               </section>
@@ -588,11 +621,10 @@ export default function ChatbotStudioContent() {
                                 darkMode: isDark,
                               }))
                             }
-                            className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
-                              active
+                            className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${active
                                 ? "bg-[var(--surface)] text-[var(--text)] shadow-sm border border-[var(--border)]"
                                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                            }`}
+                              }`}
                           >
                             {mode}
                           </button>
@@ -623,16 +655,14 @@ export default function ChatbotStudioContent() {
                           blur: !prev.blur,
                         }))
                       }
-                      className={`relative w-10 h-6 rounded-full transition-colors ${
-                        widgetConfig.blur
+                      className={`relative w-10 h-6 rounded-full transition-colors ${widgetConfig.blur
                           ? "bg-[var(--text)]"
                           : "bg-[var(--border-strong)]"
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                          widgetConfig.blur ? "translate-x-4" : "translate-x-0"
-                        }`}
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${widgetConfig.blur ? "translate-x-4" : "translate-x-0"
+                          }`}
                       />
                     </button>
                   </div>
@@ -663,18 +693,16 @@ export default function ChatbotStudioContent() {
                                 borderRadius: value,
                               }))
                             }
-                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border text-[11px] font-medium transition-all ${
-                              active
+                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border text-[11px] font-medium transition-all ${active
                                 ? "border-[var(--text)] text-[var(--text)] bg-[var(--bg)]"
                                 : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`w-7 h-7 border-2 ${
-                                active
+                              className={`w-7 h-7 border-2 ${active
                                   ? "border-[var(--text)]"
                                   : "border-[var(--border-strong)]"
-                              }`}
+                                }`}
                               style={{ borderRadius: rx }}
                             />
                             {label}
@@ -711,11 +739,10 @@ export default function ChatbotStudioContent() {
                                 position: value,
                               }))
                             }
-                            className={`py-2.5 px-3 rounded-lg border text-[12px] font-medium transition-all ${
-                              active
+                            className={`py-2.5 px-3 rounded-lg border text-[12px] font-medium transition-all ${active
                                 ? "border-[var(--text)] text-[var(--text)] bg-[var(--bg)]"
                                 : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
-                            }`}
+                              }`}
                           >
                             {label}
                           </button>
@@ -738,7 +765,7 @@ export default function ChatbotStudioContent() {
                         Show branding
                       </p>
                       <p className="text-[11px] text-[var(--text-muted)]">
-                        Display &apos;Powered by ChatEmbed&apos; in the widget
+                        Display &apos;Powered by averto&apos; in the widget
                       </p>
                     </div>
                     <button
@@ -751,18 +778,16 @@ export default function ChatbotStudioContent() {
                           showBranding: !(prev.showBranding !== false),
                         }))
                       }
-                      className={`relative w-10 h-6 rounded-full transition-colors ${
-                        widgetConfig.showBranding !== false
+                      className={`relative w-10 h-6 rounded-full transition-colors ${widgetConfig.showBranding !== false
                           ? "bg-[var(--text)]"
                           : "bg-[var(--border-strong)]"
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                          widgetConfig.showBranding !== false
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${widgetConfig.showBranding !== false
                             ? "translate-x-4"
                             : "translate-x-0"
-                        }`}
+                          }`}
                       />
                     </button>
                   </div>
@@ -1102,11 +1127,10 @@ export default function ChatbotStudioContent() {
                                 {p.title || p.url}
                               </p>
                               <span
-                                className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
-                                  p.sourceType === "upload"
+                                className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${p.sourceType === "upload"
                                     ? "bg-violet-500/10 text-violet-400 border border-violet-500/20"
                                     : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                                }`}
+                                  }`}
                               >
                                 {p.sourceType === "upload" ? "Upload" : "Crawl"}
                               </span>

@@ -53,6 +53,65 @@ const RADIUS: Record<NonNullable<WidgetConfig["borderRadius"]>, number> = {
   pill: 24,
 };
 
+// Helper to parse markdown-like bold (**bold**) and render it using robust React components
+function parseBoldText(text: string): React.ReactNode[] {
+  const regex = /\*\*(.*?)\*\*/g;
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const matchIndex = match.index;
+    if (matchIndex > lastIndex) {
+      nodes.push(text.substring(lastIndex, matchIndex));
+    }
+    nodes.push(
+      <strong key={matchIndex} className="font-semibold">
+        {match[1]}
+      </strong>
+    );
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.substring(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : [text];
+}
+
+// Helper to parse lists, link markers, bold text and newlines inline, to ensure seamless streaming compatibility
+function parseMarkdownInline(text: string): React.ReactNode {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const result: React.ReactNode[] = [];
+
+  lines.forEach((line, lineIdx) => {
+    // Matches bullets starting with optional whitespace, then - or * or • followed by a space
+    const bulletMatch = line.match(/^(\s*)([-*•])\s+(.*)$/);
+    const content = bulletMatch ? bulletMatch[3] : line;
+    const inlineNodes = parseBoldText(content);
+
+    if (bulletMatch) {
+      result.push(
+        <span key={`line-${lineIdx}`} className="inline-block pl-2 my-0.5 w-full">
+          <span className="inline-block mr-1.5 opacity-70">•</span>
+          {inlineNodes}
+        </span>
+      );
+    } else {
+      result.push(<span key={`line-${lineIdx}`}>{inlineNodes}</span>);
+    }
+
+    if (lineIdx < lines.length - 1) {
+      result.push(<br key={`br-${lineIdx}`} />);
+    }
+  });
+
+  return <>{result}</>;
+}
+
 // ── StreamingText ─────────────────────────────────────────────────────────────
 // Wraps only the freshest chunk in a blur-fade animation so each arriving
 // piece of text materialises from blurry → sharp, exactly like Grok.
@@ -78,11 +137,11 @@ function StreamingText({
     prev.current = isStreaming ? content : "";
   });
 
-  if (!isStreaming) return <>{content}</>;
+  if (!isStreaming) return <>{parseMarkdownInline(content)}</>;
 
   return (
     <>
-      {stable}
+      {parseMarkdownInline(stable)}
       {fresh ? (
         // key changes per chunk so the span re-mounts and replays the animation
         <motion.span
@@ -92,7 +151,7 @@ function StreamingText({
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           style={{ display: "inline" }}
         >
-          {fresh}
+          {parseMarkdownInline(fresh)}
         </motion.span>
       ) : null}
     </>
@@ -288,9 +347,9 @@ export default function WidgetPreview({
     background: windowBg,
     ...(blur
       ? {
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        }
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+      }
       : {}),
     borderColor: darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.09)",
   };
@@ -569,7 +628,7 @@ export default function WidgetPreview({
             className="px-3 pt-3 flex flex-col gap-2 shrink-0"
             style={{
               ...inputAreaStyle,
-              paddingBottom: showBranding ? "0.5rem" : "0.75rem",
+              paddingBottom: "0.5rem",
             }}
           >
             <form onSubmit={handleSubmit} className="flex gap-2">
@@ -594,18 +653,16 @@ export default function WidgetPreview({
             </form>
 
             {/* Branding footer (inside the window, below input) */}
-            {showBranding && (
-              <p
-                className="text-center text-[10px] pb-1"
-                style={{
-                  color: darkMode
-                    ? "rgba(226,232,240,0.28)"
-                    : "rgba(24,24,27,0.32)",
-                }}
-              >
-                Powered by <span className="font-semibold">ChatEmbed</span>
-              </p>
-            )}
+            <p
+              className="text-center text-[10px] pb-1"
+              style={{
+                color: darkMode
+                  ? "rgba(226,232,240,0.28)"
+                  : "rgba(24,24,27,0.32)",
+              }}
+            >
+              Powered by <span className="font-semibold text-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer">averto</span>
+            </p>
           </div>
         </div>
 

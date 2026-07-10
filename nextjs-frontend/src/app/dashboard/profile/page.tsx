@@ -4,6 +4,16 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { apiFetch } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
+import { 
+  User, 
+  ShieldCheck, 
+  Palette, 
+  EnvelopeSimple, 
+  Warning, 
+  LockKey,
+  Eye,
+  EyeSlash 
+} from "@phosphor-icons/react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -17,7 +27,7 @@ interface Toast {
 // ── Shared input style ─────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full px-3 py-2.5 text-[13px] rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--border-strong)] transition-colors";
+  "w-full px-3.5 py-2.5 text-[13px] rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--text-muted)] focus:ring-[1.5px] focus:ring-[var(--border-strong)] transition-all placeholder:text-[var(--text-muted)]";
 
 // ── Animations ─────────────────────────────────────────────────────────────
 
@@ -37,47 +47,6 @@ const tabContentVariants: Variants = {
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-function EyeOff() {
-  return (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.75}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-      />
-    </svg>
-  );
-}
-
-function EyeOn() {
-  return (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.75}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
-  );
-}
-
 function PasswordField({
   label,
   hint,
@@ -94,11 +63,11 @@ function PasswordField({
   onToggle: () => void;
 }) {
   return (
-    <div>
-      <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+    <div className="space-y-1.5">
+      <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
         {label}
         {hint && (
-          <span className="text-[var(--text-muted)] font-normal ml-1">
+          <span className="text-[var(--text-muted)] font-normal ml-1 lowercase">
             {hint}
           </span>
         )}
@@ -115,9 +84,9 @@ function PasswordField({
           type="button"
           onClick={onToggle}
           tabIndex={-1}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all p-1 rounded-md hover:bg-[var(--surface-hover)] cursor-pointer"
         >
-          {show ? <EyeOff /> : <EyeOn />}
+          {show ? <EyeSlash size={16} /> : <Eye size={16} />}
         </button>
       </div>
     </div>
@@ -137,11 +106,11 @@ function SaveBtn({
 }) {
   return (
     <motion.button
-      whileHover={{ scale: loading || disabled ? 1 : 1.02 }}
-      whileTap={{ scale: loading || disabled ? 1 : 0.97 }}
+      whileHover={{ scale: loading || disabled ? 1 : 1.01 }}
+      whileTap={{ scale: loading || disabled ? 1 : 0.98 }}
       onClick={onClick}
       disabled={loading || disabled}
-      className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50 transition-opacity"
+      className="px-5 py-2.5 rounded-xl text-[12.5px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50 transition-opacity cursor-pointer shadow-sm shadow-black/5 dark:shadow-black/10"
     >
       {loading ? "Saving..." : label}
     </motion.button>
@@ -160,9 +129,9 @@ function Row({
   return (
     <div className="flex items-center justify-between gap-6 py-4 border-b border-[var(--border)] last:border-0">
       <div>
-        <p className="text-[13px] font-medium text-[var(--text)]">{label}</p>
+        <p className="text-[13px] font-semibold text-[var(--text)]">{label}</p>
         {hint && (
-          <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{hint}</p>
+          <p className="text-[12px] text-[var(--text-secondary)] mt-0.5">{hint}</p>
         )}
       </div>
       <div className="shrink-0">{children}</div>
@@ -297,12 +266,22 @@ export default function ProfilePage() {
 
   return (
     <motion.div
-      className="px-10 py-10 w-full max-w-2xl mx-auto"
+      className="relative px-10 py-10 w-full max-w-2xl mx-auto"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 38 }}
     >
-      {/* Toast */}
+      {/* Premium ambient top glow background */}
+      <div className="absolute inset-x-0 top-0 pointer-events-none overflow-hidden -z-10 h-[300px]">
+        <div 
+          className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[500px] h-[200px] rounded-full blur-[80px]"
+          style={{
+            background: "radial-gradient(circle, rgba(200, 169, 102, 0.08) 0%, rgba(200, 169, 102, 0) 70%)"
+          }}
+        />
+      </div>
+
+      {/* Toast notifications */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -311,16 +290,26 @@ export default function ProfilePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 24 }}
             transition={{ type: "spring", stiffness: 400, damping: 36 }}
-            className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-xl border shadow-xl text-[13px] font-medium ${
+            className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-xl border shadow-xl text-[13px] font-medium backdrop-blur-md ${
               toast.type === "success"
-                ? "bg-[var(--surface)] border-[var(--success)] text-[var(--success)]"
-                : "bg-[var(--surface)] border-[var(--danger)] text-[var(--danger)]"
+                ? "bg-[var(--surface)]/95 border-[var(--success)]/30 text-[var(--success)] shadow-green-500/5"
+                : "bg-[var(--surface)]/95 border-[var(--danger)]/30 text-[var(--danger)] shadow-red-500/5"
             }`}
           >
             {toast.message}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-[24px] font-semibold tracking-tight text-[var(--text)]">
+          Account Settings
+        </h1>
+        <p className="text-[13px] text-[var(--text-secondary)] mt-1">
+          Manage your personal details, credentials, and app preferences.
+        </p>
+      </div>
 
       {/* Identity card */}
       <motion.div
@@ -332,27 +321,27 @@ export default function ProfilePage() {
           damping: 38,
           delay: 0.04,
         }}
-        className="flex items-center gap-4 p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] mb-6"
+        className="flex items-center gap-4 p-5 rounded-2xl border border-[var(--border)] bg-gradient-to-b from-white/[0.015] to-transparent dark:from-white/[0.03] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-all shadow-[inset_0_1px_rgba(255,255,255,0.02)] mb-8"
       >
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt="avatar"
-            className="w-12 h-12 rounded-full object-cover border border-[var(--border)] shrink-0"
+            className="w-12 h-12 rounded-full object-cover border border-[var(--border-strong)] shrink-0 shadow-sm"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-[var(--border-strong)] flex items-center justify-center text-[18px] font-semibold text-[var(--text-secondary)] shrink-0">
+          <div className="w-12 h-12 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-strong)] flex items-center justify-center text-[16px] font-bold text-[var(--text-secondary)] shrink-0 shadow-inner">
             {initials}
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-[var(--text)] truncate">
+          <p className="text-[14.5px] font-semibold text-[var(--text)] tracking-tight truncate">
             {name || "Unnamed user"}
           </p>
-          <p className="text-[13px] text-[var(--text-muted)] truncate mt-0.5">
+          <p className="text-[12px] text-[var(--text-secondary)] font-mono opacity-80 truncate mt-0.5">
             {email}
           </p>
         </div>
@@ -368,23 +357,26 @@ export default function ProfilePage() {
           damping: 38,
           delay: 0.08,
         }}
-        className="flex border-b border-[var(--border)] mb-6"
+        className="flex border-b border-[var(--border)] mb-8 gap-2"
       >
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => switchTab(tab.id)}
-            className={`relative px-5 py-2.5 text-[13px] font-medium transition-colors ${
+            className={`relative flex items-center gap-2 px-4 py-3 text-[13px] font-semibold transition-colors cursor-pointer ${
               activeTab === tab.id
                 ? "text-[var(--text)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
           >
+            {tab.id === "profile" && <User size={15} weight={activeTab === tab.id ? "bold" : "regular"} />}
+            {tab.id === "security" && <ShieldCheck size={15} weight={activeTab === tab.id ? "bold" : "regular"} />}
+            {tab.id === "appearance" && <Palette size={15} weight={activeTab === tab.id ? "bold" : "regular"} />}
             {tab.label}
             {activeTab === tab.id && (
               <motion.div
                 layoutId="tab-underline"
-                className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-[var(--text)] rounded-full"
+                className="absolute bottom-[-1px] left-0 right-0 h-[2.5px] bg-[var(--text)] rounded-full"
                 transition={{ type: "spring", stiffness: 500, damping: 42 }}
               />
             )}
@@ -402,20 +394,20 @@ export default function ProfilePage() {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="space-y-5"
+            className="space-y-6"
           >
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+            <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-b from-white/[0.015] to-transparent dark:from-white/[0.03] bg-[var(--surface)] overflow-hidden hover:border-[var(--border-strong)] transition-all">
               <div className="px-6 pt-5 pb-4 border-b border-[var(--border)]">
-                <h2 className="text-[14px] font-semibold text-[var(--text)]">
-                  Profile information
+                <h2 className="text-[14.5px] font-semibold text-[var(--text)] tracking-tight">
+                  Profile Information
                 </h2>
-                <p className="text-[13px] text-[var(--text-muted)] mt-0.5">
-                  Update your display name and avatar.
+                <p className="text-[12px] text-[var(--text-secondary)] mt-1">
+                  Update your display name and avatar details.
                 </p>
               </div>
               <div className="px-6 py-5 space-y-4">
-                <div>
-                  <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                <div className="space-y-1.5">
+                  <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                     Name
                   </label>
                   <input
@@ -426,24 +418,29 @@ export default function ProfilePage() {
                     placeholder="Your name"
                   />
                 </div>
-                <div>
-                  <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                    Email
+                <div className="space-y-1.5">
+                  <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                    Email Address
                   </label>
-                  <input
-                    type="email"
-                    value={email}
-                    disabled
-                    className={`${inputCls} cursor-not-allowed opacity-50`}
-                  />
-                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">
-                    Contact support to change your email address.
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={email}
+                      disabled
+                      className={`${inputCls} cursor-not-allowed opacity-50 bg-[var(--bg-elevated)]`}
+                    />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-60">
+                      <EnvelopeSimple size={15} />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] italic">
+                    Contact support team directly to request an email update.
                   </p>
                 </div>
-                <div>
-                  <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                <div className="space-y-1.5">
+                  <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                     Avatar URL{" "}
-                    <span className="text-[var(--text-muted)] font-normal">
+                    <span className="text-[var(--text-muted)] font-normal lowercase">
                       (optional)
                     </span>
                   </label>
@@ -456,7 +453,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <div className="px-6 pb-5 flex justify-end">
+              <div className="px-6 pb-5 flex justify-end border-t border-[var(--border)] pt-4">
                 <SaveBtn
                   loading={savingProfile}
                   label="Save changes"
@@ -465,35 +462,25 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Account deletion info — no button, just contact info */}
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-5">
-              <h2 className="text-[14px] font-semibold text-[var(--text)] mb-1">
-                Delete account
-              </h2>
-              <p className="text-[13px] text-[var(--text-muted)] leading-relaxed">
-                To permanently delete your account and all associated data,
-                contact the project owner.
-              </p>
-              <a
-                href="mailto:hello@averto.ai"
-                className="inline-flex items-center gap-1.5 mt-3 text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
+            {/* Account deletion info */}
+            <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-b from-white/[0.015] to-transparent dark:from-white/[0.03] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-all px-6 py-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/8 border border-red-500/15 flex items-center justify-center shrink-0">
+                <Warning size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-[14.5px] font-semibold text-[var(--text)] tracking-tight">
+                  Delete Account
+                </h2>
+                <p className="text-[12.5px] text-[var(--text-secondary)] leading-relaxed mt-1">
+                  To permanently delete your active account and wipe all compiled chatbot databases, contact our support team.
+                </p>
+                <a
+                  href="mailto:hello@averto.ai"
+                  className="inline-flex items-center gap-1.5 mt-3 text-[12px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text)] hover:underline transition-all"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                hello@averto.ai
-              </a>
+                  hello@averto.ai
+                </a>
+              </div>
             </div>
           </motion.div>
         )}
@@ -507,33 +494,33 @@ export default function ProfilePage() {
             animate="visible"
             exit="exit"
           >
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+            <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-b from-white/[0.015] to-transparent dark:from-white/[0.03] bg-[var(--surface)] overflow-hidden hover:border-[var(--border-strong)] transition-all">
               <div className="px-6 pt-5 pb-4 border-b border-[var(--border)]">
-                <h2 className="text-[14px] font-semibold text-[var(--text)]">
-                  Change password
+                <h2 className="text-[14.5px] font-semibold text-[var(--text)] tracking-tight">
+                  Change Password
                 </h2>
-                <p className="text-[13px] text-[var(--text-muted)] mt-0.5">
-                  Choose a strong password you don&apos;t use elsewhere.
+                <p className="text-[12px] text-[var(--text-secondary)] mt-1">
+                  Create a secure credentials profile key to restrict unauthorized console login access.
                 </p>
               </div>
               <div className="px-6 py-5 space-y-4">
                 <PasswordField
-                  label="Current password"
+                  label="Current Password"
                   value={currentPassword}
                   onChange={setCurrentPassword}
                   show={showCurrentPw}
                   onToggle={() => setShowCurrentPw((v) => !v)}
                 />
                 <PasswordField
-                  label="New password"
+                  label="New Password"
                   hint="(min 6 characters)"
                   value={newPassword}
                   onChange={setNewPassword}
                   show={showNewPw}
                   onToggle={() => setShowNewPw((v) => !v)}
                 />
-                <div>
-                  <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                <div className="space-y-1.5">
+                  <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                     Confirm new password
                   </label>
                   <input
@@ -545,7 +532,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <div className="px-6 pb-5 flex justify-end">
+              <div className="px-6 pb-5 flex justify-end border-t border-[var(--border)] pt-4">
                 <SaveBtn
                   loading={savingPassword}
                   label="Change password"
@@ -568,19 +555,19 @@ export default function ProfilePage() {
             animate="visible"
             exit="exit"
           >
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+            <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-b from-white/[0.015] to-transparent dark:from-white/[0.03] bg-[var(--surface)] overflow-hidden hover:border-[var(--border-strong)] transition-all">
               <div className="px-6 pt-5 pb-4 border-b border-[var(--border)]">
-                <h2 className="text-[14px] font-semibold text-[var(--text)]">
+                <h2 className="text-[14.5px] font-semibold text-[var(--text)] tracking-tight">
                   Appearance
                 </h2>
-                <p className="text-[13px] text-[var(--text-muted)] mt-0.5">
-                  Customize how Averto looks for you.
+                <p className="text-[12px] text-[var(--text-secondary)] mt-1">
+                  Customize the visual styling of Averto on this device browser.
                 </p>
               </div>
               <div className="px-6 py-2">
                 <Row
-                  label="Theme"
-                  hint="Switch between light and dark interface"
+                  label="Theme mode"
+                  hint="Switch between dark and light dynamic console interface"
                 >
                   <ThemeToggle />
                 </Row>

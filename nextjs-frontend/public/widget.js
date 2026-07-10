@@ -488,12 +488,10 @@
   win.appendChild(formEl);
 
   /* ── Branding footer ── */
-  if (showBranding) {
-    const brandingEl = document.createElement("div");
-    brandingEl.className = "ce-branding";
-    brandingEl.innerHTML = `<a href="https://chatembed.io" target="_blank" rel="noopener noreferrer">Powered by ChatEmbed</a>`;
-    win.appendChild(brandingEl);
-  }
+  const brandingEl = document.createElement("div");
+  brandingEl.className = "ce-branding";
+  brandingEl.innerHTML = `<a href="https://averto.ai" target="_blank" rel="noopener noreferrer">Powered by averto</a>`;
+  win.appendChild(brandingEl);
 
   /* ════════════════════════════════════════════════════════════════
      STATE
@@ -504,6 +502,36 @@
   /* ════════════════════════════════════════════════════════════════
      DOM HELPERS
   ════════════════════════════════════════════════════════════════ */
+
+  function escapeHTML(text) {
+    if (!text) return "";
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function formatMarkdownToHTML(text) {
+    if (!text) return "";
+    const safeText = escapeHTML(text);
+    const lines = safeText.split("\n");
+    const processedLines = lines.map(line => {
+      const bulletMatch = line.match(/^(\s*)([-*•])\s+(.*)$/);
+      let content = line;
+      if (bulletMatch) {
+        content = `<span class="ce-bullet" style="opacity: 0.7; margin-right: 6px;">&bull;</span>` + bulletMatch[3];
+      }
+      content = content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      
+      if (bulletMatch) {
+        return `<span style="display: inline-block; padding-left: 8px; margin: 2px 0; width: 100%;">${content}</span>`;
+      }
+      return content;
+    });
+    return processedLines.join("<br />");
+  }
 
   function scrollToBottom() {
     messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: "smooth" });
@@ -527,7 +555,11 @@
     wrap.className = "ce-wrap";
     const msg = document.createElement("div");
     msg.className = "ce-msg " + (isError ? "ce-error" : "ce-bot");
-    msg.textContent = text;
+    if (isError) {
+      msg.textContent = text;
+    } else {
+      msg.innerHTML = formatMarkdownToHTML(text);
+    }
     wrap.appendChild(msg);
     messagesEl.appendChild(wrap);
     scrollToBottom();
@@ -581,21 +613,21 @@
     function pushChunk(chunk) {
       // Promote previous fresh into stable
       if (freshSpan) {
-        stableText += freshSpan.textContent;
-        stableSpan.textContent = stableText;
+        stableText += freshSpan.innerHTML;
+        stableSpan.innerHTML = stableText;
         msg.removeChild(freshSpan);
         freshSpan = null;
       }
       // Mount new fresh span — DOM insertion re-triggers @keyframes
       freshSpan = document.createElement("span");
       freshSpan.className = "fresh";
-      freshSpan.textContent = chunk;
+      freshSpan.innerHTML = formatMarkdownToHTML(chunk);
       msg.appendChild(freshSpan);
       scrollToBottom();
     }
 
     function finalize(fullText) {
-      stableSpan.textContent = fullText;
+      stableSpan.innerHTML = formatMarkdownToHTML(fullText);
       if (freshSpan && msg.contains(freshSpan)) {
         msg.removeChild(freshSpan);
         freshSpan = null;
@@ -630,7 +662,11 @@
   /** Add source pills below a message wrapper (skip upload:// urls, max 3). */
   function addSources(wrap, sources) {
     if (!Array.isArray(sources) || sources.length === 0) return;
-    const valid = sources
+    const normalized = sources.map(s => {
+      if (typeof s === "string") return { url: s, heading: s, score: null };
+      return s;
+    });
+    const valid = normalized
       .filter(
         (s) => s && typeof s.url === "string" && !s.url.startsWith("upload://"),
       )

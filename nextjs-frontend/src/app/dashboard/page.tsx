@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { apiFetch } from "@/lib/api";
-import { Trash, ArrowUpRight } from "@phosphor-icons/react";
+import { Trash, ArrowUpRight, Globe, Robot } from "@phosphor-icons/react";
 
 interface Chatbot {
   id: string;
@@ -204,35 +204,46 @@ export default function DashboardPage() {
 
   return (
     <motion.div
-      className="px-10 py-10 w-full max-w-3xl mx-auto"
+      className="relative px-10 py-10 w-full max-w-3xl mx-auto"
       variants={pageVariants}
       initial="hidden"
       animate="visible"
     >
+      {/* Premium background ambient glow */}
+      <div className="absolute inset-x-0 top-0 pointer-events-none overflow-hidden -z-10 h-[400px]">
+        <div 
+          className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[250px] rounded-full blur-[80px]"
+          style={{
+            background: "radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0) 70%)"
+          }}
+        />
+      </div>
+
       {/* Header */}
       <motion.header
         variants={cardVariants}
-        className="flex items-center justify-between gap-4 mb-8"
+        className="flex items-center justify-between gap-4 mb-10 border-b border-[var(--border)] pb-6"
       >
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-[var(--text)]">
+          <h1 className="text-[24px] font-semibold tracking-tight text-[var(--text)]">
             Your chatbots
           </h1>
-          <p className="text-[13px] text-[var(--text-muted)] mt-0.5">
+          <p className="text-[13px] text-[var(--text-secondary)] mt-1.5 flex items-center gap-2">
+            {!loading && <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--accent-warm)] shadow-[0_0_8px_var(--accent-warm)]" />}
             {loading
-              ? "Loading..."
+              ? "Loading your assistants..."
               : chatbots.length === 0
                 ? "No chatbots yet"
-                : `${chatbots.length} chatbot${chatbots.length !== 1 ? "s" : ""} · click any to open Studio`}
+                : `${chatbots.length} active chatbot${chatbots.length !== 1 ? "s" : ""} · Click to open studio`}
           </p>
         </div>
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.01, y: -0.5 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-95 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_1px_rgba(255,255,255,0.2)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_rgba(255,255,255,0.15)] transition-all cursor-pointer"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0">
             <line
               x1="7"
               y1="1"
@@ -260,27 +271,27 @@ export default function DashboardPage() {
       {loading ? (
         <motion.div
           variants={cardVariants}
-          className="flex flex-col items-center justify-center py-28 gap-3"
+          className="flex flex-col items-center justify-center py-32 gap-4"
         >
-          <div className="w-5 h-5 border-2 border-[var(--border-strong)] border-t-[var(--text)] rounded-full animate-spin" />
-          <p className="text-[13px] text-[var(--text-muted)]">
-            Loading chatbots...
+          <div className="w-6 h-6 border-2 border-[var(--border-strong)] border-t-[var(--text-secondary)] rounded-full animate-spin" />
+          <p className="text-[13px] text-[var(--text-muted)] tracking-wide">
+            Retrieving chatbots...
           </p>
         </motion.div>
       ) : chatbots.length === 0 ? (
         <motion.div
           variants={cardVariants}
-          className="flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-[var(--border)]"
+          className="flex flex-col items-center justify-center py-24 px-6 gap-6 rounded-2xl border border-dashed border-[var(--border-strong)] bg-gradient-to-b from-[rgba(255,255,255,0.015)] to-transparent relative overflow-hidden bento-dot-pattern"
         >
-          <div className="w-12 h-12 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--surface)] border border-[var(--border-strong)] flex items-center justify-center shadow-lg shadow-black/5 dark:shadow-black/20">
             <svg
-              width="20"
-              height="20"
+              width="22"
+              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.75"
-              className="text-[var(--text-muted)]"
+              strokeWidth="1.5"
+              className="text-[var(--text-secondary)]"
             >
               <path
                 strokeLinecap="round"
@@ -289,26 +300,26 @@ export default function DashboardPage() {
               />
             </svg>
           </div>
-          <div className="text-center">
-            <p className="text-[15px] font-semibold text-[var(--text)]">
+          <div className="text-center space-y-1.5 max-w-sm">
+            <p className="text-[15px] font-semibold text-[var(--text)] tracking-tight">
               No chatbots yet
             </p>
-            <p className="text-[13px] text-[var(--text-muted)] mt-1 max-w-xs">
+            <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
               Add your website URL and we&apos;ll crawl it, index every page,
-              and build a chatbot in minutes.
+              and build a custom RAG chatbot in minutes.
             </p>
           </div>
           <motion.button
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setShowModal(true)}
-            className="px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 transition-opacity"
+            className="px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-95 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_rgba(255,255,255,0.15)] transition-opacity cursor-pointer"
           >
             Create your first chatbot
           </motion.button>
         </motion.div>
       ) : (
-        <motion.div variants={pageVariants} className="space-y-3">
+        <motion.div variants={pageVariants} className="space-y-4">
           <AnimatePresence>
             {chatbots.map((bot) => {
               const cfg = statusCfg(bot.status);
@@ -323,99 +334,94 @@ export default function DashboardPage() {
                     scale: 0.98,
                     transition: { duration: 0.2 },
                   }}
-                  whileHover={{ y: -1 }}
-                  className="group relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:shadow-lg transition-shadow"
-                  style={{ transition: "border-color 0.15s, box-shadow 0.2s" }}
+                  className="group relative rounded-2xl border border-[var(--border)] bg-gradient-to-b from-white/[0.015] to-transparent dark:from-white/[0.03] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.08),inset_0_1px_rgba(255,255,255,0.05)] dark:hover:shadow-[0_16px_32px_rgba(0,0,0,0.3),inset_0_1px_rgba(255,255,255,0.07)] transition-all duration-300"
                 >
-                  {/* Thin left accent by status */}
-                  <div
-                    className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full ${bot.status === "ready" ? "bg-[var(--success)]" : bot.status === "failed" ? "bg-[var(--danger)]" : "bg-blue-400"}`}
-                  />
-
-                  <div className="pl-6 pr-5 py-5">
-                    <div className="flex items-start gap-4 justify-between">
-                      {/* Left: info — clicking opens studio */}
+                  <div className="px-6 py-5">
+                    <div className="flex items-center gap-4 justify-between">
+                      {/* Left: Info Block & Icon Container */}
                       <button
                         onClick={() =>
                           router.push(`/dashboard/chatbots/${bot.id}`)
                         }
-                        className="flex-1 text-left min-w-0"
+                        className="flex-1 text-left min-w-0 flex items-center gap-4 group/btn cursor-pointer"
                       >
-                        <div className="flex items-center gap-2.5 mb-1">
-                          <h3 className="text-[15px] font-semibold text-[var(--text)] truncate">
-                            {bot.name}
-                          </h3>
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${cfg.badge}`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
-                            />
-                            {cfg.label}
-                          </span>
+                        {/* Status Graphic box */}
+                        <div className="w-11 h-11 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-strong)] flex items-center justify-center shrink-0 shadow-[inset_0_1px_rgba(255,255,255,0.02)] group-hover/btn:scale-[1.03] transition-transform duration-300">
+                          {bot.status === "ready" ? (
+                            <Globe size={18} className="text-[var(--text-secondary)] group-hover/btn:text-[var(--text)] transition-colors" />
+                          ) : (
+                            <Robot size={18} className="text-[var(--text-secondary)] group-hover/btn:text-[var(--text)] transition-colors" />
+                          )}
                         </div>
-                        <p className="text-[13px] text-[var(--text-muted)] truncate">
-                          {bot.websiteUrl}
-                        </p>
-                        {bot.status === "ready" && (
-                          <p className="text-[12px] text-[var(--text-secondary)] mt-1">
-                            {bot.pagesCrawled} pages indexed
+
+                        {/* Text fields */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-[14.5px] font-semibold text-[var(--text)] tracking-tight truncate transition-colors">
+                              {bot.name}
+                            </h3>
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${cfg.badge}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
+                              />
+                              {cfg.label}
+                            </span>
+                          </div>
+                          
+                          <p className="text-[12px] text-[var(--text-secondary)] truncate font-mono opacity-80">
+                            {bot.websiteUrl}
                           </p>
-                        )}
-                        {["crawling", "indexing", "pending"].includes(
-                          bot.status,
-                        ) && (
-                          <p className="text-[12px] text-blue-400 mt-1 flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />
-                            Processing your site...
-                          </p>
-                        )}
+                          
+                          {bot.status === "ready" && (
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1.5 flex items-center gap-1.5 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] shadow-[0_0_8px_var(--success)] shrink-0 animate-pulse" />
+                              {bot.pagesCrawled} pages indexed
+                            </p>
+                          )}
+                          {["crawling", "indexing", "pending"].includes(
+                            bot.status,
+                          ) && (
+                            <p className="text-[11px] text-blue-400 mt-1.5 flex items-center gap-1.5 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
+                              Processing your knowledge base...
+                            </p>
+                          )}
+                        </div>
                       </button>
 
-                      {/* Right: actions */}
-                      <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                      {/* Right: Action Buttons */}
+                      <div className="flex items-center gap-2 shrink-0">
                         <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
+                          whileHover={{ scale: 1.02, y: -0.5 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() =>
                             router.push(`/dashboard/chatbots/${bot.id}`)
                           }
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 transition-opacity"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[11px] font-semibold border border-[var(--border-strong)] bg-gradient-to-b from-white/[0.02] to-transparent dark:from-white/[0.04] hover:bg-[var(--surface-hover)] hover:border-[var(--text-muted)] text-[var(--text)] transition-all shadow-sm cursor-pointer"
                         >
                           Open Studio
-                          <svg
-                            width="11"
-                            height="11"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                          >
-                            <path
-                              d="M2 10L10 2M10 2H5M10 2V7"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <ArrowUpRight size={11} weight="bold" className="opacity-80" />
                         </motion.button>
 
                         <motion.button
                           whileHover={{
                             scale: 1.05,
-                            backgroundColor: "rgba(239,68,68,0.1)",
+                            backgroundColor: "rgba(239, 68, 68, 0.08)",
                           }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleDelete(bot.id)}
-                          className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--danger)] border border-transparent hover:border-red-500/10 transition-all cursor-pointer"
                           title="Delete chatbot"
                         >
                           <svg
-                            width="15"
-                            height="15"
+                            width="14"
+                            height="14"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="1.75"
+                            strokeWidth="2"
                           >
                             <path
                               strokeLinecap="round"
@@ -445,41 +451,51 @@ export default function DashboardPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-50"
               onClick={handleCloseModal}
             />
 
             {/* Panel */}
             <motion.div
               key="modal-panel"
-              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              transition={{ type: "spring", stiffness: 420, damping: 38 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              transition={{ type: "spring", stiffness: 400, damping: 36 }}
               className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none"
             >
               <div
-                className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-2xl pointer-events-auto"
+                className="bg-gradient-to-b from-[var(--surface)] to-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-2xl p-6 w-full max-w-md shadow-2xl pointer-events-auto shadow-black/30 dark:shadow-black/60"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h2 className="text-[17px] font-semibold text-[var(--text)] mb-5">
-                  New chatbot
-                </h2>
+                <div className="flex items-center justify-between mb-5 pb-3 border-b border-[var(--border)]">
+                  <h2 className="text-[16.5px] font-semibold text-[var(--text)] tracking-tight">
+                    Create new chatbot
+                  </h2>
+                  <button 
+                    onClick={handleCloseModal}
+                    className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all cursor-pointer"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
 
                 <form onSubmit={handleCreate} className="space-y-4">
                   {createError && (
                     <motion.div
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-[13px]"
+                      className="px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-[13px] font-medium"
                     >
                       {createError}
                     </motion.div>
                   )}
 
                   {/* Name */}
-                  <div>
-                    <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                  <div className="space-y-1.5">
+                    <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                       Name
                     </label>
                     <input
@@ -487,17 +503,17 @@ export default function DashboardPage() {
                       required
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="w-full px-3 py-2.5 text-[13px] rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--border-strong)] transition-colors"
+                      className="w-full px-3.5 py-2.5 text-[13px] rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--text-muted)] focus:ring-[1.5px] focus:ring-[var(--border-strong)] transition-all placeholder:text-[var(--text-muted)]"
                       placeholder="Support Bot"
                     />
                   </div>
 
                   {/* Crawl mode toggle */}
-                  <div>
-                    <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-2">
+                  <div className="space-y-1.5">
+                    <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                       Crawl mode
                     </label>
-                    <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--bg)] border border-[var(--border)]">
+                    <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg)] border border-[var(--border)]">
                       {[
                         { label: "Single URL (auto-crawl)", value: false },
                         { label: "Specific URLs", value: true },
@@ -506,7 +522,7 @@ export default function DashboardPage() {
                           key={String(value)}
                           type="button"
                           onClick={() => setMultipleUrlMode(value)}
-                          className={`relative flex-1 py-1.5 text-[12px] font-medium rounded-md transition-colors ${
+                          className={`relative flex-1 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
                             multipleUrlMode === value
                               ? "text-[var(--text)]"
                               : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -515,11 +531,11 @@ export default function DashboardPage() {
                           {multipleUrlMode === value && (
                             <motion.div
                               layoutId="crawl-mode-pill"
-                              className="absolute inset-0 bg-[var(--surface)] rounded-md shadow-sm"
+                              className="absolute inset-0 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-sm"
                               transition={{
                                 type: "spring",
                                 stiffness: 500,
-                                damping: 40,
+                                damping: 38,
                               }}
                             />
                           )}
@@ -538,8 +554,9 @@ export default function DashboardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.15 }}
+                        className="space-y-1.5"
                       >
-                        <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                        <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                           Website URL
                         </label>
                         <input
@@ -547,7 +564,7 @@ export default function DashboardPage() {
                           required
                           value={newUrl}
                           onChange={(e) => setNewUrl(e.target.value)}
-                          className="w-full px-3 py-2.5 text-[13px] rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--border-strong)] transition-colors"
+                          className="w-full px-3.5 py-2.5 text-[13px] rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--text-muted)] focus:ring-[1.5px] focus:ring-[var(--border-strong)] transition-all placeholder:text-[var(--text-muted)]"
                           placeholder="https://yoursite.com"
                         />
                       </motion.div>
@@ -558,10 +575,11 @@ export default function DashboardPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.15 }}
+                        className="space-y-1.5"
                       >
-                        <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                        <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                           URLs{" "}
-                          <span className="text-[var(--text-muted)] font-normal">
+                          <span className="text-[var(--text-muted)] font-normal lowercase">
                             (one per line)
                           </span>
                         </label>
@@ -569,13 +587,13 @@ export default function DashboardPage() {
                           required
                           value={multipleUrls}
                           onChange={(e) => setMultipleUrls(e.target.value)}
-                          rows={5}
-                          className="w-full px-3 py-2.5 text-[13px] rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--border-strong)] transition-colors resize-none font-mono"
+                          rows={4}
+                          className="w-full px-3.5 py-2.5 text-[12px] rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:border-[var(--text-muted)] focus:ring-[1.5px] focus:ring-[var(--border-strong)] transition-all resize-none font-mono placeholder:text-[var(--text-muted)]"
                           placeholder={
                             "https://yoursite.com/page1\nhttps://yoursite.com/page2"
                           }
                         />
-                        <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                        <p className="text-[10px] text-[var(--text-muted)] italic">
                           First URL is used as the primary domain.
                         </p>
                       </motion.div>
@@ -583,22 +601,23 @@ export default function DashboardPage() {
                   </AnimatePresence>
 
                   {/* Cloudflare warning */}
-                  <div className="flex items-start gap-2 px-3 py-2.5 bg-yellow-500/8 border border-yellow-500/20 rounded-lg">
-                    <span className="text-[13px] shrink-0">⚠️</span>
-                    <p className="text-[12px] text-yellow-400 leading-relaxed">
-                      Sites protected by Cloudflare or CAPTCHA cannot be
-                      crawled.
+                  <div className="flex items-start gap-2.5 px-3 py-2.5 bg-amber-500/8 border border-amber-500/15 rounded-xl">
+                    <span className="text-[12px] shrink-0">⚠️</span>
+                    <p className="text-[11px] text-amber-500/90 leading-relaxed font-medium">
+                      Pages protected by Cloudflare Bot Shield or CAPTCHAs cannot be crawled.
                     </p>
                   </div>
 
                   {/* Page limit */}
-                  <div>
-                    <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                      Page limit{" "}
-                      <span className="text-[var(--text-muted)] font-normal">
-                        (default 10, max 200)
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                        Page limit
+                      </label>
+                      <span className="text-[11px] font-semibold text-[var(--text-muted)] bg-[var(--bg)] border border-[var(--border)] px-2 py-0.5 rounded-md tabular-nums">
+                        {pageLimit} pages
                       </span>
-                    </label>
+                    </div>
                     <div className="flex items-center gap-3">
                       <input
                         type="range"
@@ -607,24 +626,20 @@ export default function DashboardPage() {
                         step={5}
                         value={pageLimit}
                         onChange={(e) => setPageLimit(Number(e.target.value))}
-                        className="flex-1 accent-[var(--text)]"
+                        className="flex-1 accent-[var(--accent-warm)]"
                       />
-                      <span className="text-[13px] font-semibold text-[var(--text)] tabular-nums w-10 text-right">
-                        {pageLimit}
-                      </span>
                     </div>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-1.5">
-                      Max pages to crawl plus room for uploaded PDFs and text
-                      files.
+                    <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                      Defines the maximum crawl depth limit. Includes uploaded context assets.
                     </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-3 border-t border-[var(--border)]">
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="flex-1 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
+                      className="flex-1 py-2.5 text-[12.5px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)] rounded-xl hover:bg-[var(--surface-hover)] transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -633,7 +648,7 @@ export default function DashboardPage() {
                       disabled={creating}
                       whileHover={{ scale: creating ? 1 : 1.01 }}
                       whileTap={{ scale: creating ? 1 : 0.98 }}
-                      className="flex-1 py-2.5 text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      className="flex-1 py-2.5 text-[12.5px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] rounded-xl hover:opacity-95 disabled:opacity-50 transition-opacity cursor-pointer shadow-sm"
                     >
                       {creating ? "Creating..." : "Create"}
                     </motion.button>

@@ -86,13 +86,13 @@ function SidebarContent() {
 
   const botNavItems = chatbotId
     ? [
-        { name: "Customize", tab: "customize", icon: "palette" },
-        { name: "Knowledge", tab: "knowledge", icon: "book" },
-        { name: "Insights", tab: "insights", icon: "chart" },
-        { name: "Activity", tab: "activity", icon: "activity" },
-        { name: "Embed", tab: "embed", icon: "code" },
-        { name: "Settings", tab: "settings", icon: "settings" },
-      ]
+      { name: "Customize", tab: "customize", icon: "palette" },
+      { name: "Knowledge", tab: "knowledge", icon: "book" },
+      { name: "Insights", tab: "insights", icon: "chart" },
+      { name: "Activity", tab: "activity", icon: "activity" },
+      { name: "Embed", tab: "embed", icon: "code" },
+      { name: "Settings", tab: "settings", icon: "settings" },
+    ]
     : [];
 
   const statusColor: Record<string, string> = {
@@ -164,11 +164,10 @@ function SidebarContent() {
             )}
             <Link
               href="/dashboard"
-              className={`relative z-10 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                pathname === "/dashboard"
+              className={`relative z-10 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${pathname === "/dashboard"
                   ? "text-[var(--text)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text)]"
-              }`}
+                }`}
             >
               <svg
                 className="w-4 h-4 opacity-60"
@@ -198,11 +197,10 @@ function SidebarContent() {
             )}
             <Link
               href="/dashboard/profile"
-              className={`relative z-10 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                isActive("/dashboard/profile")
+              className={`relative z-10 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${isActive("/dashboard/profile")
                   ? "text-[var(--text)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text)]"
-              }`}
+                }`}
             >
               <svg
                 className="w-4 h-4 opacity-60"
@@ -331,11 +329,10 @@ function SidebarContent() {
                   )}
                   <Link
                     href={href}
-                    className={`relative z-10 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                      active
+                    className={`relative z-10 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${active
                         ? "text-[var(--text)]"
                         : "text-[var(--text-secondary)] hover:text-[var(--text)]"
-                    }`}
+                      }`}
                   >
                     <NavIcon type={item.icon} />
                     {item.name}
