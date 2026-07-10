@@ -31,7 +31,7 @@ const REDUCED_SPRING  = { stiffness: 10000, damping: 100, mass: 0.1 };
 
 // Wrapper: visual shell that replaces the native <input> border/bg
 const wrapperBase =
-  "w-full rounded-xl bg-[var(--surface)] border border-[var(--border)] " +
+  "w-full rounded-2xl bg-[var(--surface)] border border-[var(--border-strong)] " +
   "px-4 py-3 transition-colors duration-150 " +
   "focus-within:border-[var(--border-strong)] " +
   "focus-within:ring-1 focus-within:ring-[var(--border-strong)]";

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
-import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Docs — ChatEmbed",
@@ -590,8 +589,6 @@ https://app.yoursite.com`}</CodeBlock>
           </div>
         </main>
       </div>
-
-      <SiteFooter />
     </div>
   );
 }
