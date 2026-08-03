@@ -94,7 +94,10 @@ export const getChatbots = async (req: AuthRequest, res: Response) => {
 export const getChatbotStatus = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const chatbot = await prisma.chatbot.findFirst({
-    where: { id, organization: { ownerId: req.user!.userId } },
+    where: {
+      id,
+      organization: { ownerId: req.user!.userId },
+    },
     select: {
       id: true,
       status: true,

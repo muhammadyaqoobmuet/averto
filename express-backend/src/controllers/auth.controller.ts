@@ -54,7 +54,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "5h",
     });
     const refreshToken = jwt.sign({ userId: user.id }, REFRESH_SECRET, {
       expiresIn: "7d",
@@ -132,10 +132,10 @@ export const refresh = async (req: Request, res: Response) => {
     if (!refreshToken) {
       return res.status(401).json({ error: "No refresh token provided" });
     }
-
-    let payload: { userId: string };
+    type payloadType = { userId: string };
+    let payload: payloadType;
     try {
-      payload = jwt.verify(refreshToken, REFRESH_SECRET) as { userId: string };
+      payload = jwt.verify(refreshToken, REFRESH_SECRET) as payloadType;
     } catch {
       return res
         .status(401)
@@ -154,8 +154,9 @@ export const refresh = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Refresh token has expired" });
     }
 
+    // TODO : ROTATIONS OF REFRESH TOKEN
     const accessToken = jwt.sign({ userId: payload.userId }, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "5h",
     });
     return res.json({ accessToken });
   } catch (error: any) {

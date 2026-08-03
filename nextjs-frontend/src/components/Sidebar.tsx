@@ -118,7 +118,7 @@ function SidebarContent() {
             viewBox="0 0 22 22"
             fill="none"
             aria-hidden="true"
-            className="text-[var(--accent)] transition-transform group-hover:scale-105"
+            className="text-[var(--text)] transition-transform group-hover:scale-105"
           >
             <rect
               width="22"

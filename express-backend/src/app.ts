@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 
-// ── Widget CORS — must come first, before the global CORS ────────────────────
+// ── Widget CORS —────────────────────
 // The /api/chat endpoint is called by the embeddable widget from ANY website.
 // Authentication is via the API key in the request body, so CORS can be open.
 // Server-side allowedOrigins enforcement happens inside the chat controller.

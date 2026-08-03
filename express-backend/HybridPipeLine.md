@@ -1,4 +1,4 @@
-      # Task: Implement Hybrid Retrieval Pipeline (Query Expansion → Dense + BM25 → RRF Merge → Rerank → LLM)
+ # Task: Implement Hybrid Retrieval Pipeline (Query Expansion → Dense + BM25 → RRF Merge → Rerank → LLM)
 
 ## Context
 

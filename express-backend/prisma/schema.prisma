@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
+  provider = "postgresql"
+
   extensions = [vector]
 }
 
@@ -50,7 +50,7 @@ model Chatbot {
   customModel    String? // e.g., "gpt-4o", "gemini-2.0-flash", "llama-3.3-70b-versatile"
   customApiKey   String? // user's own API key
   allowedOrigins String[]       @default([]) // CORS origins for widget embedding
-  widgetConfig   Json?          // appearance config: bubbleColor, chatBgColor, position, borderRadius, darkMode, blur, showBranding
+  widgetConfig   Json? // appearance config: bubbleColor, chatBgColor, position, borderRadius, darkMode, blur, showBranding
   organization   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   chunks         Chunk[]
   conversations  Conversation[]
@@ -121,5 +121,5 @@ model RefreshToken {
   tokenHash String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete:Cascade)
 }

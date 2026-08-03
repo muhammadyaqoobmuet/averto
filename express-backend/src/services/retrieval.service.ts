@@ -8,7 +8,7 @@ import { SearchChunk } from "./llm.service";
 import { denseSearch } from "./retrieval/dense.service";
 import { fuseResults } from "./retrieval/rrf.service";
 import { sparseSearch } from "./retrieval/sparse.service";
-import { getGroqFastLLM, getGroqLLM } from "../utils/llm-provider";
+import {  getGroqFastLLM, getGroqLLM } from "../utils/llm-provider";
 
 // --- Pipeline config ---
 const RRF_CANDIDATE_POOL_SIZE = 25;

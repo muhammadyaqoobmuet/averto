@@ -313,7 +313,7 @@ export default function ModelSettings({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 py-2.5 text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="btn-primary flex-1 py-2.5 text-[13px] font-semibold rounded-lg"
           >
             {saving ? "Saving…" : "Save settings"}
           </button>

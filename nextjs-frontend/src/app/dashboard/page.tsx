@@ -241,7 +241,7 @@ export default function DashboardPage() {
           whileHover={{ scale: 1.01, y: -0.5 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-95 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_1px_rgba(255,255,255,0.2)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3),inset_0_1px_rgba(255,255,255,0.15)] transition-all cursor-pointer"
+          className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-semibold"
         >
           <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0">
             <line
@@ -313,7 +313,7 @@ export default function DashboardPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowModal(true)}
-            className="px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-95 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_rgba(255,255,255,0.15)] transition-opacity cursor-pointer"
+            className="btn-primary px-5 py-2.5 rounded-xl text-[13px] font-semibold"
           >
             Create your first chatbot
           </motion.button>
@@ -648,7 +648,7 @@ export default function DashboardPage() {
                       disabled={creating}
                       whileHover={{ scale: creating ? 1 : 1.01 }}
                       whileTap={{ scale: creating ? 1 : 0.98 }}
-                      className="flex-1 py-2.5 text-[12.5px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] rounded-xl hover:opacity-95 disabled:opacity-50 transition-opacity cursor-pointer shadow-sm"
+                      className="btn-primary flex-1 py-2.5 text-[12.5px] font-semibold rounded-xl"
                     >
                       {creating ? "Creating..." : "Create"}
                     </motion.button>

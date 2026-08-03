@@ -582,7 +582,7 @@ https://app.yoursite.com`}</CodeBlock>
             </div>
             <a
               href="mailto:support@chatembed.ai"
-              className="shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 transition-opacity"
+              className="btn-primary shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold"
             >
               Email support
             </a>

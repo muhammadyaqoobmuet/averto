@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiLogin } from "@/lib/api";
 import SmoothInput from "@/components/SmoothInput";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -56,25 +57,18 @@ export default function SignupPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--bg)] text-[var(--text)]">
       {/* ── Left: orbital art panel ───────────────────────────────────────── */}
-      <div className="relative hidden lg:block w-1/2 overflow-hidden bg-[var(--bg-elevated)]">
-        <OrbitalArt />
+      <div className="relative hidden lg:block w-1/2 overflow-hidden ">
+        <Image
+          src="/averto_register.png"
+          alt=""
+          className="object-cover  w-full h-full rounded-t-lg  rounded-b-lg"
+          width={1900}
+          height={1000}
+        />
 
-        {/* Right-edge fade */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10"
-          style={{
-            background:
-              "linear-gradient(to right, transparent 58%, var(--bg) 100%)",
-          }}
-        />
+        {/* bottom fade */}
+        <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-[var(--bg)] to-transparent"></div>
         {/* Top / bottom vignette */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10"
-          style={{
-            background:
-              "linear-gradient(to bottom, var(--bg-elevated) 0%, transparent 13%, transparent 87%, var(--bg-elevated) 100%)",
-          }}
-        />
 
         {/* Quote */}
         <div className="absolute bottom-12 left-0 right-20 px-14 z-20">
@@ -190,7 +184,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 py-3 mt-1 text-[14px] font-semibold rounded-lg bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-60 transition-opacity"
+              className="btn-primary w-full rounded-xl flex items-center justify-center gap-2.5 py-3 mt-1 text-[14px] font-semibold"
             >
               {loading ? (
                 <>

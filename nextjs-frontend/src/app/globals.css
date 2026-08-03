@@ -455,6 +455,68 @@ body {
 }
 
 /* =========================================
+   PRIMARY BUTTONS (dashboard / app chrome)
+   Solid white in dark mode so CTAs stand out
+   instead of washing into the surface. Uses
+   literal colors — immune to the marketing
+   .dark token block that clobbers --accent.
+   ========================================= */
+
+.btn-primary {
+    background: #ffffff;
+    color: #0a0a0c;
+    border: 1px solid rgba(9, 9, 9, 0.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.55),
+        0 1px 2px rgba(0, 0, 0, 0.22),
+        0 8px 24px -12px rgba(0, 0, 0, 0.55);
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.1s ease;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #f2f1ee;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 1px 3px rgba(0, 0, 0, 0.24),
+        0 10px 28px -12px rgba(0, 0, 0, 0.6);
+}
+
+.btn-primary:active {
+    transform: translateY(0.5px);
+}
+
+.btn-primary:disabled {
+    background: rgba(255, 255, 255, 0.35);
+    color: rgba(10, 10, 12, 0.4);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+[data-theme="light"] .btn-primary {
+    background: #0c0c0f;
+    color: #fafaf8;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="light"] .btn-primary:hover {
+    background: #1a1a1f;
+}
+
+[data-theme="light"] .btn-primary:disabled {
+    background: rgba(12, 12, 15, 0.4);
+    color: rgba(250, 250, 248, 0.5);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* =========================================
    BENTO GRID PATTERNS
    ========================================= */
 

@@ -87,7 +87,7 @@ export default function SiteNav({ active }: SiteNavProps) {
           </Link>
           <Link
             href="/signup"
-            className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 active:scale-[0.97] transition-all"
+            className="btn-primary px-4 py-2 rounded-lg text-[13px] font-semibold"
           >
             Get started
           </Link>

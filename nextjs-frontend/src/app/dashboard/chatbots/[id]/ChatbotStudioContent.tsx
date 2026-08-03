@@ -359,7 +359,7 @@ export default function ChatbotStudioContent() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="btn-primary shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold"
           >
             {saving ? "Saving…" : "Save changes"}
           </button>
@@ -1213,7 +1213,7 @@ export default function ChatbotStudioContent() {
                 />
                 <button
                   onClick={handleSaveOrigins}
-                  className="mt-2 px-4 py-2 text-[13px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] rounded-lg hover:opacity-90 transition-opacity"
+                  className="btn-primary mt-2 px-4 py-2 text-[13px] font-semibold rounded-lg"
                 >
                   Save allowed origins
                 </button>

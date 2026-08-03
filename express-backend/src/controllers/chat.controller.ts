@@ -34,6 +34,7 @@ function withHardTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  *  4. Generate LLM answer (streaming via SSE if stream=true, or JSON)
  *  5. Persist conversation history
  */
+
 export const chat = async (req: Request, res: Response) => {
   try {
     const {
@@ -145,7 +146,7 @@ export const chat = async (req: Request, res: Response) => {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const { answer, sources } = await generateAnswer(
+      const { answer, sources, sourceDetails } = await generateAnswer(
         query,
         searchChunks,
         chatbotContext,
@@ -156,7 +157,7 @@ export const chat = async (req: Request, res: Response) => {
       );
 
       res.write(
-        `data: ${JSON.stringify({ done: true, sources, confidence })}\n\n`,
+        `data: ${JSON.stringify({ done: true, sources, sourceDetails, confidence })}\n\n`,
       );
       res.end();
 

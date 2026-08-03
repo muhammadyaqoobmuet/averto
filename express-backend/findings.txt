@@ -1,0 +1,354 @@
+  ================================================================================
+EXPRESS.JS BACKEND CODE AUDIT — FINDINGS
+Read-only audit. Source files were NOT modified.
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE: src/app.ts
+CATEGORY: Bug
+SEVERITY: High
+ISSUE: CORS for the public /api/chat widget endpoint is silently overwritten by
+the global dashboard CORS, breaking cross-origin widget embedding.
+EVIDENCE: Line 22 mounts `cors({ origin: "*", ... })` ONLY for "/api/chat", but
+line 38 then mounts `dashboardCors` (cors with a fixed FRONTEND_URL +
+credentials:true) globally with no path restriction. For any /api/chat request
+BOTH middlewares run (mount order: chat-cors first, then dashboardCors second),
+so dashboardCors overwrites the `Access-Control-Allow-Origin` header with the
+specific frontend origin. The comment at lines 18-21 explicitly states CORS must
+be open because the widget is embedded from ANY website — the actual behavior is
+the opposite, so third-party sites get blocked by the browser.
+SUGGESTED FIX: Apply dashboardCors only to non-chat routes (e.g. mount it with a
+path whitelist or exclude /api/chat), or register the open /api/chat CORS AFTER
+the global one. Verify with an actual cross-origin preflight test.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/app.ts
+CATEGORY: Optimization / Security
+SEVERITY: Medium
+ISSUE: No request body size limit and no rate limiting; rate-limit dependencies
+are present but never wired up.
+EVIDENCE: Line 40 `app.use(express.json())` has no `limit` option (DoS via large
+payloads). `express-rate-limit` and `redis-rate-limiter` are in package.json but
+`grep` shows zero usage anywhere in src. Auth (signup/login) and the public
+/api/chat endpoint are therefore unthrottled → credential brute-force and chatbot
+API abuse are possible.
+SUGGESTED FIX: Add `express.json({ limit: "1mb" })` and apply rate limiting to
+/auth/* (especially login/signup) and /api/chat (per apiKey). Remove unused
+rate-limit deps if not adopted.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/middleware/auth.middleware.ts (and src/controllers/auth.controller.ts)
+CATEGORY: Bug (Security)
+SEVERITY: High
+ISSUE: JWT secrets fall back to hard-coded weak defaults when env vars are unset.
+EVIDENCE: auth.middleware.ts:8 `const JWT_SECRET = process.env.JWT_SECRET ||
+"secret"`; auth.controller.ts:8-9 `JWT_SECRET = ... || "secret"` and
+`REFRESH_SECRET = ... || "refresh_secret"`. If JWT_SECRET/JWT_REFRESH_SECRET are
+not configured, attackers can forge valid tokens with the known word "secret".
+The same default is duplicated in two files (drift risk).
+SUGGESTED FIX: Fail fast at boot if JWT_SECRET/REFRESH_SECRET are missing in
+production. Never ship a usable fallback. Centralize secret loading in one config
+module.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/auth.controller.ts
+CATEGORY: Bug (Security)
+SEVERITY: Medium
+ISSUE: Refresh tokens are stored as plaintext, not hashed, and are never rotated
+or invalidated on use.
+EVIDENCE: login() stores `tokenHash: refreshToken` (the raw JWT) at lines 64-70.
+The column is literally named `tokenHash` but holds the cleartext token. No
+refresh-token rotation is implemented despite ErrorCode.AUTH_REFRESH_TOKEN_REUSED
+existing in utils/error.ts. A DB leak yields directly usable sessions.
+SUGGESTED FIX: Store a hash (e.g. sha-256) of the refresh token; implement
+rotation (issue new token + invalidate old on refresh). Verify on refresh by
+hashing the incoming token.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/middleware/zodMiddleware.ts
+CATEGORY: Bug / Simplification
+SEVERITY: Low
+ISSUE: Middleware is dead code, and its error-propagation path would misclassify
+validation failures because the global handler only reads `err.status`.
+EVIDENCE: Defined at zodMiddleware.ts but `grep` shows it is imported/used
+nowhere. Additionally, when it does pass a ZodError via `next(error)` (line 11),
+globalErrorHandler (utils/errors.ts:13) uses `err.status || 500`, and ZodError
+has no `status`, so any validation error would return HTTP 500 instead of 400.
+SUGGESTED FIX: Either wire the middleware in and make globalErrorHandler map
+ZodError -> 400, or delete the unused middleware.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/chat.controller.ts
+CATEGORY: Bug
+SEVERITY: Medium
+ISSUE: When `sessionId` is omitted, Prisma ignores the `undefined` value in
+`where`, collapsing all session-less conversations for a chatbot into one.
+EVIDENCE: Lines 165-172 and 199-206:
+`prisma.conversation.findFirst({ where: { chatbotId, sessionId } })`. Prisma
+treats `sessionId: undefined` as "do not filter", so it returns the first
+conversation for that chatbot regardless of session. The subsequent
+`create({ sessionId: sessionId ?? "" })` stores "" while the lookup ignores
+sessionId — inconsistent and merges unrelated user threads.
+SUGGESTED FIX: Normalize missing sessionId explicitly (e.g. generate a uuid when
+absent) and always pass a concrete string, or filter with a defined fallback.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/chat.controller.ts
+CATEGORY: Optimization
+SEVERITY: Medium
+ISSUE: LLM generation has no timeout/abort, so the SSE/JSON chat request can hang
+indefinitely even though retrieval is bounded.
+EVIDENCE: retrieveContext is wrapped in withHardTimeout (lines 14-24, 101-104)
+with RETRIEVAL_TIMEOUT_MS=30s, but `generateAnswer(...)` (lines 149 / 191) is NOT
+wrapped. The streaming branch (lines 144-162) has no timeout at all, and the
+Anthropic streaming path in llm.service.ts also has no timeout. If the LLM
+provider stalls, `res.end()` is never called.
+SUGGESTED FIX: Bound generateAnswer with the same hard-timeout pattern (and pass
+an AbortSignal to axios streams) so the request always terminates.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/chat.controller.ts
+CATEGORY: Optimization
+SEVERITY: Low
+ISSUE: Promise.race timeout leaks the underlying retrieveContext promise.
+EVIDENCE: withHardTimeout (lines 14-24) rejects on timeout but does not cancel or
+await the real promise, which keeps running (DB calls, Voyage/Groq network) and
+may later reject unhandled.
+SUGGESTED FIX: Use AbortController/signal-based cancellation for Voyage/Groq/axios
+calls, or attach `.catch(()=>{})` to the abandoned promise to prevent unhandled
+rejections.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/chatbot.controller.ts
+CATEGORY: Bug
+SEVERITY: Medium
+ISSUE: Crawl worker retry is not idempotent — a failed crawl job that BullMQ
+retries re-creates duplicate CrawlPage + Chunk rows.
+EVIDENCE: queue/crawl.worker.ts processes pages sequentially and inserts
+crawlPage/indexed chunks; the job has `attempts: 3` (chatbot.controller.ts:57-59)
+but there is no de-duplication by URL or status guard between attempts. A retry
+after partial failure inserts the same pages again (chatbotId+url is not unique).
+SUGGESTED FIX: Make crawl idempotent: delete existing crawl pages at job start
+(like recrawlChatbot does), or use upsert on (chatbotId, url), and gate on a
+"crawling/indexing" status check before re-inserting.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/services/indexing.service.ts
+CATEGORY: Bug
+SEVERITY: Low
+ISSUE: The `heading` field is never populated; it is always NULL.
+EVIDENCE: The splitter is given metadata `{ chatbotId, pageId }`
+(line 34); `docs[i].metadata.heading` (lines 70-71) is therefore always undefined,
+so every Chunk is inserted with `heading = null`. Retrieval results lose heading
+context that the UI/sources expect.
+SUGGESTED FIX: Propagate heading from the splitter (e.g. a custom splitter or
+post-process to capture the nearest markdown heading) before inserting.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/services/indexing.service.ts
+CATEGORY: Optimization
+SEVERITY: Medium
+ISSUE: Chunks are inserted one-by-one with a separate DB round-trip per chunk.
+EVIDENCE: Lines 58-95 loop over docs and call `prisma.$executeRawUnsafe(INSERT...)`
+per chunk. For pages producing many chunks this is N sequential awaits. Also
+$executeRawUnsafe is used though the values are bound parameters (safe, but the
+"unsafe" API bypasses Prisma's query builder).
+SUGGESTED FIX: Batch inserts into a single multi-row INSERT or use
+createMany/transaction; consider switching to parameterized `$executeRaw`
+(Prisma.sql) instead of `$executeRawUnsafe`.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/prisma/schema.prisma
+CATEGORY: Optimization
+SEVERITY: High
+ISSUE: No database index on the frequently-filtered `chatbotId` scalar columns.
+EVIDENCE: Chunk.chatbotId, Conversation.chatbotId, CrawlPage.chatbotId, and
+MissedQuery.chatbotId are all queried constantly (every chat request, every
+dashboard stat, sparse/dense retrieval WHERE clauses) but none have an explicit
+`@@index([chatbotId])`. Prisma does not auto-index relation scalar fields. As data
+grows, these become sequential scans. (Chunk also JOINs CrawlPage on pageId — that
+is covered by the PK.)
+SUGGESTED FIX: Add `@@index([chatbotId])` to Chunk, Conversation, CrawlPage, and
+MissedQuery (and consider a composite index on Chunk(chatbotId, embedding) usage
+patterns). Also add an index on Conversation(sessionId) and
+MissedQuery(chatbotId, askedAt).
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/lib/prisma.ts
+CATEGORY: Optimization (Security)
+SEVERITY: Medium
+ISSUE: Prisma query logging is always enabled, leaking every SQL statement to
+stdout regardless of environment.
+EVIDENCE: Line 8 `log: ['query']` is unconditional. This is noisy, hurts
+throughput, and bypasses the pino redaction configured in utils/logger.ts (raw
+SQL with bound values can still reveal data).
+SUGGESTED FIX: Gate by env, e.g. `log: process.env.NODE_ENV === 'development' ?
+['query','error','warn'] : ['error','warn']`.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/utils/schemas.ts
+CATEGORY: Bug (Simplification)
+SEVERITY: Medium
+ISSUE: `chatRequestSchema` is defined but never applied; the public /api/chat
+endpoint performs no input validation.
+EVIDENCE: `grep` shows chatRequestSchema (lines 57-61) is used nowhere. chat.routes.ts
+simply calls `chat` and chat.controller.ts casts `req.body as {...}` (lines 40-50)
+without validating. Malformed/oversized input (e.g. non-uuid apiKey, missing
+query) flows straight into DB lookups and LLM calls.
+SUGGESTED FIX: Validate with chatRequestSchema (or at least zod parse) in the
+route/controller; reject early with 400.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/utils/error.ts
+CATEGORY: Simplification
+SEVERITY: Low
+ISSUE: Entire AppError class hierarchy (BadRequestError, UnauthorizedError, ...)
+is dead code and duplicates utils/errors.ts.
+EVIDENCE: `grep` finds no imports of utils/error.ts anywhere; the project only
+uses `globalErrorHandler` and `AppError` from utils/errors.ts. Two competing
+AppError shapes exist (errors.ts uses `status`, error.ts uses `statusCode`) which
+is confusing.
+SUGGESTED FIX: Delete src/utils/error.ts (or consolidate into a single errors
+module actually used by controllers).
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/lib/redis.ts
+CATEGORY: Simplification
+SEVERITY: Low
+ISSUE: `getRedis()` is dead code; BullMQ queues/workers create their own
+connections.
+EVIDENCE: `grep` shows getRedis is exported but never imported. The singleton
+connection is never used; chatbot.controller.ts and the workers instantiate
+Queue/Worker with inline `{ url: REDIS_URL }`.
+SUGGESTED FIX: Remove getRedis or actually use it for shared Redis connections
+(e.g. for caching) to avoid connection sprawl.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/index.ts + src/app.ts
+CATEGORY: Simplification
+SEVERITY: Low
+ISSUE: `dotenv.config()` is called twice.
+EVIDENCE: index.ts:2 and app.ts:14 both call dotenv.config(). Redundant.
+SUGGESTED FIX: Call once at the very top entry (index.ts).
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/chatbot.controller.ts
+CATEGORY: Simplification
+SEVERITY: Low
+ISSUE: Ownership/authorization check `prisma.chatbot.findFirst({ where: { id,
+organization: { ownerId: req.user!.userId } } })` is copy-pasted across ~12
+handler functions.
+EVIDENCE: Repeated at lines 96, 127, 163, 179, 199, 232, 263, 310, 338, 391, 438,
+473, 499. High duplication, easy to forget on a new route (authz bypass risk).
+SUGGESTED FIX: Extract a `getOwnedChatbot(id, userId)` helper or a
+`requireChatbotOwner` middleware that loads and attaches the chatbot to req.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/controllers/chat.controller.ts
+CATEGORY: Simplification
+SEVERITY: Low
+ISSUE: Conversation-persistence logic is duplicated between the streaming and
+non-streaming code paths.
+EVIDENCE: Lines 165-185 (streaming) and 199-219 (non-streaming) contain identical
+"find or create conversation + create user/assistant messages" blocks.
+SUGGESTED FIX: Extract a `persistConversation(chatbotId, sessionId, query,
+answer, confidence, sources)` helper and call it once in each path.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/services/llm.service.ts
+CATEGORY: Bug
+SEVERITY: Low
+ISSUE: `withTimeout` is only applied to the non-streaming custom-model and
+platform-waterfall branches; the Anthropic (Claude) streaming/non-streaming
+branches have no timeout.
+EVIDENCE: Lines 119-169 (Claude stream) and 172-191 (Claude non-stream) make
+axios calls with no timeout configured (the streaming POST even sets
+responseType:"stream" with no timeout). A hung Claude connection stalls the
+chat response.
+SUGGESTED FIX: Add axios `timeout` (and/or an AbortController) to every external
+LLM call, including the Anthropic path.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/utils/voyage.ts
+CATEGORY: Bug
+SEVERITY: Low
+ISSUE: embedQuery returns an empty array `[]` on failure, which produces an
+invalid pgvector and a silent retrieval miss.
+EVIDENCE: Line 83 `return embedding ?? []`. If Voyage returns nothing/empty, the
+caller (dense.service.ts:38) builds `vectorStr = "[]"` and queries
+`c.embedding <=> []::vector`, which throws; denseSearch catches and returns [].
+The failure is silent and the user gets no answer context.
+SUGGESTED FIX: Throw on empty embedding so callers can fall back/log explicitly.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src/queue/document.worker.ts + crawl.worker.ts
+CATEGORY: Bug (Security/Reliability)
+SEVERITY: Low
+ISSUE: Missing internal-API-key guard and inconsistent failure status handling.
+EVIDENCE: crawl.worker.ts:56 sends `X-Internal-Key: INTERNAL_API_KEY`; if
+INTERNAL_API_KEY is undefined the header is sent as the literal "undefined"
+string. document.worker.ts has no such header at all. On failure document.worker
+sets status back to 'ready' (line 74) even when indexing failed, masking the
+failure from the UI.
+SUGGESTED FIX: Validate INTERNAL_API_KEY at boot; ensure failed document jobs
+leave the chatbot in a non-'ready' state or record an error so the UI reflects it.
+--------------------------------------------------------------------------------
+
+================================================================================
+SUMMARY
+================================================================================
+Total issues by category:
+  Bugs (incl. security):           12
+  Simplification / Dead code:       7
+  Optimization:                     5
+  (Some items span categories; counted once under primary category.)
+
+Top 3 most critical issues:
+  1. [High] CORS override in app.ts breaks the public /api/chat widget
+     (cross-origin embedding silently blocked) — src/app.ts:22 vs :38.
+  2. [High] Hard-coded fallback JWT secrets ("secret"/"refresh_secret") in
+     auth.middleware.ts:8 and auth.controller.ts:8-9 — token forgery risk if
+     env not set.
+  3. [High] Missing DB indexes on chatbotId (Chunk/Conversation/CrawlPage/
+     MissedQuery) in prisma/schema.prisma — sequential scans as data grows, and
+     missing rate limiting on auth/chat (deps present but unused).
+
+General architectural observations:
+  - Error handling is inconsistent: two competing AppError implementations
+    (utils/errors.ts vs utils/error.ts) and controllers mostly use manual
+    res.status().json() instead of a typed error system; the elaborate
+    utils/error.ts hierarchy is entirely unused.
+  - No rate limiting is wired despite express-rate-limit & redis-rate-limiter
+    being dependencies.
+  - Several "dead" utilities exist (zodMiddleware, getRedis, chatRequestSchema,
+    utils/error.ts) indicating partially-refactored code.
+  - Retrieval pipeline is well-structured with timeouts per external call, but
+    timeout coverage is incomplete (LLM generation + Anthropic path unbounded),
+    and Promise.race leaves dangling promises.
+  - Cascade deletes are correctly configured (Chunk.pageId, Chatbot.* onDelete:
+    Cascade), so deletePage/deleteChatbot do NOT orphan rows — good. The real
+    risk there is crawl-worker retry duplication, not missing cascades.
+  - The codebase is TypeScript but ships no input validation on the most
+    exposed endpoint (/api/chat); rely on zod schemas uniformly.
+================================================================================

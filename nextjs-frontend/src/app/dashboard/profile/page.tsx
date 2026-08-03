@@ -110,7 +110,7 @@ function SaveBtn({
       whileTap={{ scale: loading || disabled ? 1 : 0.98 }}
       onClick={onClick}
       disabled={loading || disabled}
-      className="px-5 py-2.5 rounded-xl text-[12.5px] font-semibold bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-95 disabled:opacity-50 transition-opacity cursor-pointer shadow-sm shadow-black/5 dark:shadow-black/10"
+      className="btn-primary px-5 py-2.5 rounded-xl text-[12.5px] font-semibold"
     >
       {loading ? "Saving..." : label}
     </motion.button>
