@@ -1,6 +1,5 @@
 node_modules
-next
+.next
 .git
 .env
 *.log
-dist

@@ -4,3 +4,5 @@ __pycache__
 .git
 .env
 *.log
+.pytest_cache
+tests
