@@ -66,7 +66,7 @@ jobs:
 
             # First time: clone repo if missing
             if [ ! -d "/opt/averto/.git" ]; then
-              git clone ${{ github.server_url }}/${{ github.repository }}.git /opt/averto
+              git clone https://github.com/muhammadyaqoobmuet/averto.git /opt/averto
             fi
 
             cd /opt/averto
