@@ -42,7 +42,7 @@ This is the most important file for reliability. It manages a **SQLite** databas
     *   **Persistence**: It saves the `status` (success, blocked, failed) so the `pipeline.py` can skip bad links.
 
 ---
-
+  
 ## 4. The Fetchers (The Muscles)
 
 ### A. `scraper/http_fetcher.py`

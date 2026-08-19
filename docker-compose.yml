@@ -1,0 +1,108 @@
+version: "3.8"
+
+services:
+  # ─── PostgreSQL + pgvector ───
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: chatembed-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ───
+  redis:
+    image: redis:7-alpine
+    container_name: chatembed-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Python Crawler ───
+  crawler:
+    build:
+      context: ./python-crawlling-backend
+      dockerfile: Dockerfile
+    container_name: chatembed-crawler
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./python-crawlling-backend/.env
+    environment:
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-internal_platform_secret_key}
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ─── Express Backend ───
+  backend:
+    build:
+      context: ./express-backend
+      dockerfile: Dockerfile
+    container_name: chatembed-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    env_file:
+      - ./express-backend/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-postgres}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PYTHON_SERVICE_URL=http://crawler:8000
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - VOYAGEAI_KEY=${VOYAGEAI_KEY}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-internal_platform_secret_key}
+      - GROQ_API_KEY_1=${GROQ_API_KEY_1}
+      - GROQ_API_KEY_2=${GROQ_API_KEY_2}
+      - GROQ_API_KEY_3=${GROQ_API_KEY_3}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      crawler:
+        condition: service_started
+
+  # ─── Next.js Frontend ───
+  frontend:
+    build:
+      context: ./nextjs-frontend
+      dockerfile: Dockerfile
+    container_name: chatembed-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      - NODE_ENV=production
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

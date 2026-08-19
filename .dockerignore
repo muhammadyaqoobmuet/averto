@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.env
+*.log
+dist
+build
+__pycache__
+.venv
+.pytest_cache
+crawler.log
+backend.log
+*.pyc

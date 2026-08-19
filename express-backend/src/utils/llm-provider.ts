@@ -12,7 +12,6 @@ import { BaseChatModel } from "@langchain/core/language_models/chat_models";
  * Keys come from env vars GROQ_API_KEY_1/2/3.
  */
 const GROQ_KEYS = [
-  process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
   process.env.GROQ_API_KEY_3,
 ].filter((k): k is string => !!k && k.length > 0);
@@ -41,7 +40,7 @@ function getNextGroqKey(): string {
 export function getGroqLLM(temperature = 0.2): ChatOpenAI {
   return new ChatOpenAI({
     apiKey: getNextGroqKey(),
-    modelName: "llama-3.3-70b-versatile",
+    modelName: "qwen/qwen3.6-27b",
     temperature,
     maxRetries: 0, // Handled externally via fallback chain
     configuration: {
@@ -57,7 +56,7 @@ export function getGroqLLM(temperature = 0.2): ChatOpenAI {
 export function getGroqFastLLM(temperature = 0.1): ChatOpenAI {
   return new ChatOpenAI({
     apiKey: getNextGroqKey(),
-    modelName: "llama3-8b-8192",
+    modelName: "qwen/qwen3.6-27b",
     temperature,
     maxRetries: 0,
     configuration: {
@@ -73,7 +72,7 @@ export function getGroqFastLLM(temperature = 0.1): ChatOpenAI {
  */
 export function getGeminiLLM(temperature = 0.2): ChatGoogleGenerativeAI {
   return new ChatGoogleGenerativeAI({
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     temperature,
     apiKey: process.env.GEMINI_API_KEY,
     maxRetries: 0, // We handle fallback manually
