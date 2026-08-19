@@ -9,7 +9,8 @@ COPY src/ ./src/
 COPY tsconfig.json ./
 COPY prisma/ ./prisma/
 
-RUN npx prisma generate --no-engine
+ARG DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+RUN npx prisma generate
 RUN npm run build
 
 # Production stage
@@ -26,4 +27,4 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 4000
-CMD ["npx", "prisma", "generate", "--no-engine", "&&", "node", "dist/index.js"]
+CMD ["node", "dist/index.js"]
