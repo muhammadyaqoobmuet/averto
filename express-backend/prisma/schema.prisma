@@ -78,11 +78,9 @@ model Chunk {
   heading     String?
   embedding   Unsupported("vector")?
   createdAt   DateTime                 @default(now())
-  content_tsv Unsupported("tsvector")? @default(dbgenerated("to_tsvector('english'::regconfig, ((COALESCE(content, ''::text) || ' '::text) || COALESCE(heading, ''::text)))"))
   chatbot     Chatbot                  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   page        CrawlPage                @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
-  @@index([content_tsv], map: "chunk_content_tsv_idx", type: Gin)
   @@index([embedding], map: "chunk_embedding_hnsw_idx")
 }
 
