@@ -1,6 +1,5 @@
-FROM python:3.12-slim AS base
+FROM python:3.12-slim
 
-# Install system deps for Chromium in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget gnupg \
     libglib2.0-0 libnss3 libnspr4 libdbus-1-3 \
@@ -10,18 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2 libatspi2.0-0 libwayland-client0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chromium
-RUN pip install --no-cache-dir playwright==1.49.1 \
-    && playwright install chromium \
-    && rm -rf /root/.cache/pip
-
 WORKDIR /app
 
-# Install Python deps first (cached layer)
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e .
 
-# Copy only what's needed
+RUN playwright install chromium --with-deps
+
 COPY main.py ./
 COPY scraper/ ./scraper/
 
