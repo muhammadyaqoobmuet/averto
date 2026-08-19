@@ -83,8 +83,8 @@ newgrp docker
 
 ```bash
 # Clone repo
-git clone <your-repo-url> /opt/chatembed
-cd /opt/chatembed
+git clone <your-repo-url> /opt/averto
+cd /opt/averto
 
 # Create .env
 cp .env.example .env
@@ -132,7 +132,7 @@ curl http://localhost:8000/health  # Crawler
 
 ### How It Works
 
-Push to `main` → Build images → Push to GHCR → SSH into DO Droplet → Deploy
+Push to `main` → Build images → Push to DO Container Registry → SSH into DO Droplet → Deploy
 
 ### Setup GitHub Secrets
 
@@ -146,6 +146,24 @@ Repo → Settings → Secrets and variables → Actions:
 | `DIGITALOCEAN_TOKEN` | From DO API → [Apps & API](https://cloud.digitalocean.com/account/api/tokens) |
 
 `GITHUB_TOKEN` is provided automatically by GitHub.
+
+### First Time Server Setup
+
+```bash
+ssh root@YOUR_DROPLET_IP
+
+# Install Docker + doctl
+curl -fsSL https://get.docker.com | sh
+sudo snap install doctl
+doctl auth init  # paste your DO API token
+
+# Clone and setup
+git clone <your-repo> /opt/averto
+cd /opt/averto
+cp .env.example .env
+nano .env  # fill in secrets
+bash scripts/server-setup.sh
+```
 
 ### Subsequent Deploys
 
@@ -168,7 +186,7 @@ sudo apt install nginx certbot python3-certbot-nginx -y
 ### Create Nginx Config
 
 ```bash
-sudo nano /etc/nginx/sites-available/chatembed
+sudo nano /etc/nginx/sites-available/averto
 ```
 
 ```nginx
@@ -199,7 +217,7 @@ server {
 ### Enable and Get SSL
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/chatembed /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/averto /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 sudo certbot --nginx -d yourdomain.com
@@ -219,7 +237,7 @@ Instead of running PostgreSQL in Docker, use DO Managed Database:
 4. Update `DATABASE_URL` in `.env`:
 
 ```env
-DATABASE_URL=postgresql://doadmin:password@db-your-cluster.db.ondigitalocean.com:25060/chatembed?sslmode=require
+DATABASE_URL=postgresql://doadmin:password@db-your-cluster.db.ondigitalocean.com:25060/averto?sslmode=require
 ```
 
 5. Remove `postgres` service from `docker-compose.yml` or disable it.
@@ -238,7 +256,7 @@ snap install doctl
 doctl auth init
 
 # Create a registry
-doctl registry create chatembed
+doctl registry create averto
 
 # Login
 doctl registry login
@@ -249,7 +267,7 @@ Update `.github/workflows/deploy.yml`:
 ```yaml
 env:
   REGISTRY: registry.digitalocean.com
-  IMAGE_PREFIX: chatembed
+  IMAGE_PREFIX: averto
 ```
 
 ---

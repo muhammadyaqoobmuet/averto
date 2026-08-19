@@ -1,10 +1,10 @@
 version: "3.8"
 
 services:
-  # ─── PostgreSQL + pgvector ───
+
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: chatembed-db
+    container_name: averto-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -20,10 +20,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Redis ───
+
   redis:
     image: redis:7-alpine
-    container_name: chatembed-redis
+    container_name: averto-redis
     restart: unless-stopped
     ports:
       - "127.0.0.1:6379:6379"
@@ -35,12 +35,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Python Crawler ───
+
   crawler:
     build:
       context: ./python-crawlling-backend
       dockerfile: Dockerfile
-    container_name: chatembed-crawler
+    container_name: averto-crawler
     restart: unless-stopped
     ports:
       - "127.0.0.1:8000:8000"
@@ -55,12 +55,12 @@ services:
       timeout: 5s
       retries: 3
 
-  # ─── Express Backend ───
+
   backend:
     build:
       context: ./express-backend
       dockerfile: Dockerfile
-    container_name: chatembed-backend
+    container_name: averto-backend
     restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"
@@ -93,7 +93,7 @@ services:
     build:
       context: ./nextjs-frontend
       dockerfile: Dockerfile
-    container_name: chatembed-frontend
+    container_name: averto-frontend
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
