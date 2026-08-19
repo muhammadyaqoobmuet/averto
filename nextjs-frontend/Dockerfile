@@ -1,23 +1,22 @@
 FROM node:20-alpine AS base
 
-# Install dependencies only
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Build the application
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 RUN npm run build
 
-# Production runner
 FROM base AS runner
 WORKDIR /app
 
