@@ -273,18 +273,50 @@ Answer:`);
       if (streamCallback) {
         const stream = await chain.stream(promptInput);
         let fullAnswer = "";
+        let inThinking = false;
+        let buf = "";
+
         for await (const chunk of stream) {
-          const { clean } = stripThinking(chunk);
-          if (clean) {
-            streamCallback(clean);
-            fullAnswer += clean;
+          buf += chunk;
+          fullAnswer += chunk;
+
+          // Flush non-thinking text from buffer
+          while (buf.length > 0) {
+            if (!inThinking) {
+              const thinkIdx = buf.indexOf("<think>");
+              if (thinkIdx >= 0) {
+                if (thinkIdx > 0) streamCallback(buf.substring(0, thinkIdx));
+                buf = buf.substring(thinkIdx + 7);
+                inThinking = true;
+              } else {
+                // Hold back last 6 chars in case `<think>` is split across chunks
+                const safe = Math.max(0, buf.length - 6);
+                if (safe > 0) {
+                  streamCallback(buf.substring(0, safe));
+                  buf = buf.substring(safe);
+                }
+                break;
+              }
+            } else {
+              const endIdx = buf.indexOf("</think>");
+              if (endIdx >= 0) {
+                buf = buf.substring(endIdx + 8);
+                inThinking = false;
+              } else {
+                break;
+              }
+            }
           }
         }
-        const { clean: cleanAnswer, thinking } = stripThinking(fullAnswer);
+
+        // Flush any remaining buffer
+        if (!inThinking && buf.length > 0) streamCallback(buf);
+
+        const { clean, thinking } = stripThinking(fullAnswer);
         logger.info(
           `[LLM] Answer via ${name} (stream) | chunks: ${chunks.length}`,
         );
-        return { answer: cleanAnswer, thinking, sources, sourceDetails };
+        return { answer: clean, thinking, sources, sourceDetails };
       } else {
         const rawAnswer = await withTimeout(
           chain.invoke(promptInput),
