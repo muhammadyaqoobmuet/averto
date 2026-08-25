@@ -680,20 +680,18 @@
     wrap.appendChild(badge);
   }
 
-  /** Add collapsible thinking section below a message wrapper. */
+  /** Add collapsible thinking section ABOVE the message wrapper. */
   function addThinking(wrap, thinking) {
     if (!thinking) return;
     const details = document.createElement("details");
     details.className = "ce-thinking";
     const summary = document.createElement("summary");
     summary.textContent = "Show thinking";
-    summary.style.cssText = "font-size:11px;font-weight:500;cursor:pointer;user-select:none;opacity:0.5;padding:2px 4px;";
     const content = document.createElement("div");
-    content.style.cssText = "font-size:12px;line-height:1.5;white-space:pre-wrap;padding:8px 10px;margin-top:4px;border-radius:6px;border:1px solid rgba(99,102,241,0.15);background:rgba(99,102,241,0.04);opacity:0.75;";
     content.textContent = thinking;
     details.appendChild(summary);
     details.appendChild(content);
-    wrap.appendChild(details);
+    wrap.insertBefore(details, wrap.firstChild);
   }
 
   /** Add source pills below a message wrapper (skip upload:// urls, max 3). */

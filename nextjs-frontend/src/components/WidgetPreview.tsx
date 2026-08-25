@@ -537,24 +537,9 @@ export default function WidgetPreview({
                 className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div className="max-w-[90%] space-y-1.5">
-                  {/* Bubble */}
-                  <div
-                    className="px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm"
-                    style={m.role === "user" ? userBubbleStyle : botBubbleStyle}
-                  >
-                    <StreamingText
-                      content={m.content}
-                      isStreaming={
-                        loading &&
-                        i === messages.length - 1 &&
-                        m.role === "assistant"
-                      }
-                    />
-                  </div>
-
-                  {/* Collapsible thinking */}
+                  {/* Collapsible thinking — above the bubble */}
                   {m.role === "assistant" && m.thinking && (
-                    <details className="px-2 group">
+                    <details className="px-2 group" style={{ marginTop: 0 }}>
                       <summary
                         className="text-[11px] font-medium cursor-pointer select-none"
                         style={{ color: darkMode ? "rgba(226,232,240,0.4)" : "rgba(24,24,27,0.35)" }}
@@ -573,6 +558,21 @@ export default function WidgetPreview({
                       </div>
                     </details>
                   )}
+
+                  {/* Bubble */}
+                  <div
+                    className="px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm"
+                    style={m.role === "user" ? userBubbleStyle : botBubbleStyle}
+                  >
+                    <StreamingText
+                      content={m.content}
+                      isStreaming={
+                        loading &&
+                        i === messages.length - 1 &&
+                        m.role === "assistant"
+                      }
+                    />
+                  </div>
 
                   {/* Confidence badge */}
                   {m.role === "assistant" &&
