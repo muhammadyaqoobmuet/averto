@@ -146,7 +146,7 @@ export const chat = async (req: Request, res: Response) => {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const { answer, sources, sourceDetails } = await generateAnswer(
+      const { answer, thinking, sources, sourceDetails } = await generateAnswer(
         query,
         searchChunks,
         chatbotContext,
@@ -156,6 +156,9 @@ export const chat = async (req: Request, res: Response) => {
         },
       );
 
+      if (thinking) {
+        res.write(`data: ${JSON.stringify({ thinking })}\n\n`);
+      }
       res.write(
         `data: ${JSON.stringify({ done: true, sources, sourceDetails, confidence })}\n\n`,
       );
@@ -188,7 +191,7 @@ export const chat = async (req: Request, res: Response) => {
     }
 
     // ── Non-streaming JSON path (default) ───────────────────────────────────────
-    const { answer, sources, sourceDetails } = await generateAnswer(
+    const { answer, thinking, sources, sourceDetails } = await generateAnswer(
       query,
       searchChunks,
       chatbotContext,
@@ -220,6 +223,7 @@ export const chat = async (req: Request, res: Response) => {
 
     res.json({
       answer,
+      thinking,
       sources,
       sourceDetails,
       confidence,

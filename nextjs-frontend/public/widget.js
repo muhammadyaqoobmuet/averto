@@ -329,6 +329,27 @@
     .ce-source-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
     .ce-source-pct   { flex-shrink: 0; font-size: 10px; color: ${sourceScoreClr}; }
 
+    /* ── Thinking (collapsible) ── */
+    .ce-thinking { margin-top: 2px; }
+    .ce-thinking summary {
+      font-size: 11px; font-weight: 500; cursor: pointer; user-select: none;
+      color: ${darkMode ? "rgba(226,232,240,0.4)" : "rgba(0,0,0,0.35)"};
+      padding: 2px 4px; list-style: none;
+    }
+    .ce-thinking summary::-webkit-details-marker { display: none; }
+    .ce-thinking summary::before {
+      content: "\\25B6"; display: inline-block; margin-right: 5px;
+      font-size: 8px; transition: transform 0.2s;
+    }
+    .ce-thinking[open] summary::before { transform: rotate(90deg); }
+    .ce-thinking > div {
+      font-size: 12px; line-height: 1.5; white-space: pre-wrap;
+      padding: 8px 10px; margin-top: 4px; border-radius: ${r};
+      border: 1px solid rgba(99,102,241,0.15);
+      background: rgba(99,102,241,0.04);
+      color: ${darkMode ? "rgba(226,232,240,0.6)" : "rgba(0,0,0,0.5)"};
+    }
+
     /* ── Input form ── */
     .ce-input-wrap {
       padding: 10px 12px;
@@ -659,6 +680,22 @@
     wrap.appendChild(badge);
   }
 
+  /** Add collapsible thinking section below a message wrapper. */
+  function addThinking(wrap, thinking) {
+    if (!thinking) return;
+    const details = document.createElement("details");
+    details.className = "ce-thinking";
+    const summary = document.createElement("summary");
+    summary.textContent = "Show thinking";
+    summary.style.cssText = "font-size:11px;font-weight:500;cursor:pointer;user-select:none;opacity:0.5;padding:2px 4px;";
+    const content = document.createElement("div");
+    content.style.cssText = "font-size:12px;line-height:1.5;white-space:pre-wrap;padding:8px 10px;margin-top:4px;border-radius:6px;border:1px solid rgba(99,102,241,0.15);background:rgba(99,102,241,0.04);opacity:0.75;";
+    content.textContent = thinking;
+    details.appendChild(summary);
+    details.appendChild(content);
+    wrap.appendChild(details);
+  }
+
   /** Add source pills below a message wrapper (skip upload:// urls, max 3). */
   function addSources(wrap, sources) {
     if (!Array.isArray(sources) || sources.length === 0) return;
@@ -759,6 +796,7 @@
 
     let streamBubble = null;
     let currentContent = "";
+    let currentThinking = "";
 
     try {
       /* ── Network request ── */
@@ -858,6 +896,11 @@
               streamBubble.pushChunk(payload.chunk);
             }
 
+            // Thinking content
+            if (typeof payload.thinking === "string" && payload.thinking.length > 0) {
+              currentThinking = payload.thinking;
+            }
+
             // Done signal — finalize message, attach badge + sources
             if (payload.done === true) {
               receivedDone = true;
@@ -875,6 +918,7 @@
               const sources = payload.sources || payload.sourceDetails || null;
 
               if (confidence !== null) addBadge(streamBubble.wrap, confidence);
+              if (currentThinking) addThinking(streamBubble.wrap, currentThinking);
               if (sources) addSources(streamBubble.wrap, sources);
               scrollToBottom();
               break;

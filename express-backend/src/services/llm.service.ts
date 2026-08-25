@@ -32,6 +32,24 @@ export interface LLMOptions {
 const GENERATION_TIMEOUT_MS = 12_000; // 12 s
 
 /**
+ * Strips `<think>...</think>` tags
+ */
+
+/** Extracts and strips <think>...</think> blocks from text */
+function stripThinking(text: string): { clean: string; thinking: string } {
+  const thinkingRegex = /<think>[\s\S]*?<\/think>/g;
+  const thinkingMatch = text.match(thinkingRegex);
+  const thinking = thinkingMatch
+    ? thinkingMatch
+        .map((m) => m.replace(/^<think>|<\/think>$/g, "").trim())
+        .filter(Boolean)
+        .join("\n\n")
+    : "";
+  const clean = text.replace(thinkingRegex, "").trim();
+  return { clean, thinking };
+}
+
+/**
  * Rejects after `ms` milliseconds with a timeout error.
  */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -70,6 +88,7 @@ export async function generateAnswer(
   streamCallback?: (chunk: string) => void,
 ): Promise<{
   answer: string;
+  thinking: string;
   sources: string[];
   sourceDetails: SourceDetail[];
 }> {
@@ -166,7 +185,7 @@ Answer:`);
           logger.info(
             `[LLM] Answer via Claude (stream) | model: ${customModel}`,
           );
-          return { answer: fullAnswer, sources, sourceDetails };
+          return { answer: fullAnswer, thinking: "", sources, sourceDetails };
         } else {
           // Non-streaming Anthropic call
           const response = await axios.post(
@@ -187,7 +206,7 @@ Answer:`);
 
           const answer: string = response.data.content[0].text;
           logger.info(`[LLM] Answer via Claude | model: ${customModel}`);
-          return { answer, sources, sourceDetails };
+          return { answer, thinking: "", sources, sourceDetails };
         }
       } catch (err: any) {
         logger.warn(
@@ -214,14 +233,14 @@ Answer:`);
           logger.info(
             `[LLM] Answer via custom model (stream) | model: ${customModel}`,
           );
-          return { answer: fullAnswer, sources, sourceDetails };
+          return { answer: fullAnswer, thinking: "", sources, sourceDetails };
         } else {
           const answer = await withTimeout(
             chain.invoke(promptInput),
             GENERATION_TIMEOUT_MS,
           );
           logger.info(`[LLM] Answer via custom model | model: ${customModel}`);
-          return { answer, sources, sourceDetails };
+          return { answer, thinking: "", sources, sourceDetails };
         }
       } catch (err: any) {
         logger.warn(
@@ -255,20 +274,25 @@ Answer:`);
         const stream = await chain.stream(promptInput);
         let fullAnswer = "";
         for await (const chunk of stream) {
-          streamCallback(chunk);
-          fullAnswer += chunk;
+          const { clean } = stripThinking(chunk);
+          if (clean) {
+            streamCallback(clean);
+            fullAnswer += clean;
+          }
         }
+        const { clean: cleanAnswer, thinking } = stripThinking(fullAnswer);
         logger.info(
           `[LLM] Answer via ${name} (stream) | chunks: ${chunks.length}`,
         );
-        return { answer: fullAnswer, sources, sourceDetails };
+        return { answer: cleanAnswer, thinking, sources, sourceDetails };
       } else {
-        const answer = await withTimeout(
+        const rawAnswer = await withTimeout(
           chain.invoke(promptInput),
           GENERATION_TIMEOUT_MS,
         );
+        const { clean, thinking } = stripThinking(rawAnswer);
         logger.info(`[LLM] Answer via ${name} | chunks: ${chunks.length}`);
-        return { answer, sources, sourceDetails };
+        return { answer: clean, thinking, sources, sourceDetails };
       }
     } catch (err: any) {
       logger.warn(
@@ -282,5 +306,5 @@ Answer:`);
   const fallbackAnswer =
     "I'm having trouble connecting to my AI service right now. Please try again in a moment.";
   if (streamCallback) streamCallback(fallbackAnswer);
-  return { answer: fallbackAnswer, sources, sourceDetails };
+  return { answer: fallbackAnswer, thinking: "", sources, sourceDetails };
 }

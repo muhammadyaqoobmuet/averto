@@ -29,6 +29,7 @@ interface SourceDetail {
 interface Message {
   role: "user" | "assistant";
   content: string;
+  thinking?: string;
   sources?: string[];
   sourceDetails?: SourceDetail[];
   confidence?: number;
@@ -265,6 +266,7 @@ export default function WidgetPreview({
           try {
             const payload = JSON.parse(line.slice(6)) as {
               chunk?: string;
+              thinking?: string;
               done?: boolean;
               sources?: string[];
               sourceDetails?: SourceDetail[];
@@ -283,6 +285,20 @@ export default function WidgetPreview({
                   updated[updated.length - 1] = {
                     ...last,
                     content: last.content + payload.chunk,
+                  };
+                }
+                return updated;
+              });
+            }
+
+            if (payload.thinking) {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    thinking: payload.thinking,
                   };
                 }
                 return updated;
@@ -535,6 +551,28 @@ export default function WidgetPreview({
                       }
                     />
                   </div>
+
+                  {/* Collapsible thinking */}
+                  {m.role === "assistant" && m.thinking && (
+                    <details className="px-2 group">
+                      <summary
+                        className="text-[11px] font-medium cursor-pointer select-none"
+                        style={{ color: darkMode ? "rgba(226,232,240,0.4)" : "rgba(24,24,27,0.35)" }}
+                      >
+                        Show thinking
+                      </summary>
+                      <div
+                        className="mt-1 px-3 py-2 text-[12px] leading-relaxed whitespace-pre-wrap border rounded-md"
+                        style={{
+                          background: darkMode ? "rgba(99,102,241,0.08)" : "rgba(99,102,241,0.04)",
+                          borderColor: darkMode ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.12)",
+                          color: darkMode ? "rgba(226,232,240,0.6)" : "rgba(24,24,27,0.5)",
+                        }}
+                      >
+                        {m.thinking}
+                      </div>
+                    </details>
+                  )}
 
                   {/* Confidence badge */}
                   {m.role === "assistant" &&
