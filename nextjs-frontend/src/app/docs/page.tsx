@@ -328,7 +328,7 @@ export default function DocsPage() {
           </P>
 
           <CodeBlock lang="html">{`<script
-  src="http://localhost:3000/widget.js"
+  src="https://your-domain.com/widget.js"
   data-api-key="YOUR_API_KEY"
   data-bot-name="My Assistant"
   data-welcome-message="Hi! How can I help you?"
@@ -452,8 +452,8 @@ https://www.yoursite.com`}</CodeBlock>
                   ],
                   [
                     "data-api-url",
-                    "localhost:4000",
-                    "Override the backend URL (for self-hosted deployments).",
+                    "auto-detected",
+                    "Override the backend URL (for self-hosted deployments). Defaults to current origin.",
                   ],
                 ].map(([attr, def, desc]) => (
                   <tr

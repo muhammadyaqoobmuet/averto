@@ -26,7 +26,7 @@
   const position = attr("data-position", "bottom-right");
   const borderKey = attr("data-border-radius", "soft");
   const showBranding = attr("data-show-branding", "true") !== "false";
-  const apiUrl = attr("data-api-url", "http://localhost:4000/api/chat");
+  const apiUrl = attr("data-api-url", window.location.origin + "/api/chat");
 
   const RADIUS = { sharp: "6px", soft: "12px", rounded: "16px", pill: "24px" };
   const r = RADIUS[borderKey] || RADIUS.soft;

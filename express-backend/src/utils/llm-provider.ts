@@ -12,6 +12,7 @@ import { BaseChatModel } from "@langchain/core/language_models/chat_models";
  * Keys come from env vars GROQ_API_KEY_1/2/3.
  */
 const GROQ_KEYS = [
+  process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
   process.env.GROQ_API_KEY_3,
 ].filter((k): k is string => !!k && k.length > 0);
