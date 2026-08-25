@@ -682,7 +682,7 @@
 
   /** Add collapsible thinking section ABOVE the message wrapper. */
   function addThinking(wrap, thinking) {
-    if (!thinking) return;
+    if (!thinking || !thinking.trim()) return;
     const details = document.createElement("details");
     details.className = "ce-thinking";
     const summary = document.createElement("summary");
