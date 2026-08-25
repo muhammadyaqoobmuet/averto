@@ -127,8 +127,9 @@ Rules:
 - If the question is NOT about this website, say: "I can only help with questions about this website. Please ask something about our services, projects, or team."
 - Do NOT write code, solve coding problems, or answer general knowledge questions
 - Keep answers short and directly related to the website
+- Start your answer immediately with no leading newlines
 
-Answer:`);
+Answer: {query}`);
 
   const promptInput = { systemInstructions, context, query };
 
@@ -281,6 +282,16 @@ Answer:`);
         let fullAnswer = "";
         let inThinking = false;
         let buf = "";
+        let leadingStripped = false;
+
+        const sendText = (text: string) => {
+          if (!text) return;
+          if (!leadingStripped) {
+            text = text.replace(/^\n+/, "");
+            if (text) leadingStripped = true;
+          }
+          streamCallback(text);
+        };
 
         for await (const chunk of stream) {
           buf += chunk;
@@ -291,14 +302,13 @@ Answer:`);
             if (!inThinking) {
               const thinkIdx = buf.indexOf("<think>");
               if (thinkIdx >= 0) {
-                if (thinkIdx > 0) streamCallback(buf.substring(0, thinkIdx));
+                if (thinkIdx > 0) sendText(buf.substring(0, thinkIdx));
                 buf = buf.substring(thinkIdx + 7);
                 inThinking = true;
               } else {
-                // Hold back last 6 chars in case `<think>` is split across chunks
                 const safe = Math.max(0, buf.length - 6);
                 if (safe > 0) {
-                  streamCallback(buf.substring(0, safe));
+                  sendText(buf.substring(0, safe));
                   buf = buf.substring(safe);
                 }
                 break;
@@ -316,7 +326,7 @@ Answer:`);
         }
 
         // Flush any remaining buffer
-        if (!inThinking && buf.length > 0) streamCallback(buf);
+        if (!inThinking && buf.length > 0) sendText(buf);
 
         const { clean, thinking } = stripThinking(fullAnswer);
         logger.info(
