@@ -232,7 +232,7 @@
     .ce-messages {
       flex: 1; overflow-y: auto; overflow-x: hidden;
       padding: 16px 14px;
-      display: flex; flex-direction: column; gap: 10px;
+      display: flex; flex-direction: column; gap: 6px;
       background: ${chatAreaBg};
       ${chatBgOverride ? `background: ${chatBgOverride};` : ""}
       scroll-behavior: smooth;

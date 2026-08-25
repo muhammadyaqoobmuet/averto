@@ -519,7 +519,7 @@ export default function WidgetPreview({
 
           {/* Messages area */}
           <div
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-2 custom-scrollbar min-h-0"
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-1 custom-scrollbar min-h-0"
             style={{ background: msgAreaBg }}
           >
             {notReady && (
@@ -536,7 +536,7 @@ export default function WidgetPreview({
                 key={i}
                 className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className="max-w-[90%] space-y-1.5">
+                <div className="max-w-[90%]">
                   {/* Collapsible thinking — above the bubble */}
                   {m.role === "assistant" && m.thinking && m.thinking.trim() && (
                     <details className="group" style={{ marginBottom: 2 }}>
@@ -580,7 +580,7 @@ export default function WidgetPreview({
                   {m.role === "assistant" &&
                     m.confidence !== undefined &&
                     m.confidence > 0 && (
-                      <div className="flex items-center gap-2 px-1">
+                      <div className="flex items-center gap-2 px-1 mt-1">
                         <span
                           className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${confidenceColor(m.confidence)}`}
                         >
@@ -593,7 +593,7 @@ export default function WidgetPreview({
 
                   {/* Source links */}
                   {m.sourceDetails && m.sourceDetails.length > 0 && (
-                    <div className="space-y-1 px-1">
+                    <div className="space-y-1 px-1 mt-1">
                       <p
                         className="text-[10px] font-medium uppercase tracking-wide"
                         style={{ color: sourceMutedColor }}
