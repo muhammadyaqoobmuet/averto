@@ -519,7 +519,7 @@ export default function WidgetPreview({
 
           {/* Messages area */}
           <div
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-3 custom-scrollbar min-h-0"
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-2 custom-scrollbar min-h-0"
             style={{ background: msgAreaBg }}
           >
             {notReady && (
@@ -539,19 +539,21 @@ export default function WidgetPreview({
                 <div className="max-w-[90%] space-y-1.5">
                   {/* Collapsible thinking — above the bubble */}
                   {m.role === "assistant" && m.thinking && m.thinking.trim() && (
-                    <details className="px-2 group" style={{ marginTop: 0, marginBottom: -8 }}>
+                    <details className="group" style={{ marginBottom: 2 }}>
                       <summary
-                        className="text-[11px] font-medium cursor-pointer select-none"
-                        style={{ color: darkMode ? "rgba(226,232,240,0.4)" : "rgba(24,24,27,0.35)" }}
+                        className="text-[10px] font-medium cursor-pointer select-none flex items-center gap-1"
+                        style={{ color: darkMode ? "rgba(226,232,240,0.35)" : "rgba(24,24,27,0.3)" }}
                       >
-                        Show thinking
+                        <svg className="w-2.5 h-2.5 transition-transform group-open:rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Thinking
                       </summary>
                       <div
-                        className="mt-1 px-3 py-2 text-[12px] leading-relaxed whitespace-pre-wrap border rounded-md"
+                        className="mt-1 px-3 py-2 text-[11px] leading-relaxed whitespace-pre-wrap rounded-md"
                         style={{
-                          background: darkMode ? "rgba(99,102,241,0.08)" : "rgba(99,102,241,0.04)",
-                          borderColor: darkMode ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.12)",
-                          color: darkMode ? "rgba(226,232,240,0.6)" : "rgba(24,24,27,0.5)",
+                          background: darkMode ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.03)",
+                          color: darkMode ? "rgba(226,232,240,0.5)" : "rgba(24,24,27,0.4)",
                         }}
                       >
                         {m.thinking}

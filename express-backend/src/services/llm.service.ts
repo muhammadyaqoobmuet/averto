@@ -109,11 +109,11 @@ export async function generateAnswer(
               `[Source ${i + 1}] ${c.heading ?? "Page"}\nURL: ${c.url}\n${c.content}`,
           )
           .join("\n\n---\n\n")
-      : "(No relevant context found — answer from general knowledge if possible)";
+      : "(No relevant context found — this question is not related to the website content)";
 
   const systemInstructions =
     chatbot.systemPrompt ??
-    `You are ${chatbot.name}, an expert website assistant. Answer the user's question using the provided context. If the context doesn't contain enough information, say so politely.`;
+    `You are ${chatbot.name}, an expert website assistant for this website. ONLY answer questions directly related to the information on this website — such as services offered, projects, team members, pricing, contact info, or documentation. If the user asks a question that cannot be answered from the provided context (like general coding problems, unrelated topics, or off-topic requests), politely decline and redirect them to ask something about the website. NEVER use general knowledge to answer questions that are not covered in the context. Keep answers concise and relevant to the website content.`;
 
   const prompt = PromptTemplate.fromTemplate(`{systemInstructions}
 
@@ -121,6 +121,12 @@ CONTEXT FROM WEBSITE:
 {context}
 
 USER QUESTION: {query}
+
+Rules:
+- ONLY use information from the CONTEXT ABOVE to answer
+- If the question is NOT about this website, say: "I can only help with questions about this website. Please ask something about our services, projects, or team."
+- Do NOT write code, solve coding problems, or answer general knowledge questions
+- Keep answers short and directly related to the website
 
 Answer:`);
 
