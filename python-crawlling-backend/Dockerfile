@@ -13,7 +13,7 @@ WORKDIR /app
 
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e .
-q
+
 RUN playwright install chromium
 
 COPY main.py ./

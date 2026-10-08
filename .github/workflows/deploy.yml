@@ -78,4 +78,3 @@ jobs:
             docker compose up -d --remove-orphans
             docker compose run --rm backend npx prisma migrate deploy
             docker image prune -f
-            
