@@ -41,7 +41,7 @@ function getNextGroqKey(): string {
 export function getGroqLLM(temperature = 0.2): ChatOpenAI {
   return new ChatOpenAI({
     apiKey: getNextGroqKey(),
-    modelName: "qwen/qwen3.6-27b",
+    modelName: "qwen/qwen3.8-27b",
     temperature,
     maxRetries: 0, // Handled externally via fallback chain
     configuration: {
@@ -57,7 +57,7 @@ export function getGroqLLM(temperature = 0.2): ChatOpenAI {
 export function getGroqFastLLM(temperature = 0.1): ChatOpenAI {
   return new ChatOpenAI({
     apiKey: getNextGroqKey(),
-    modelName: "qwen/qwen3.6-27b",
+    modelName: "qwen/qwen3.8-27b",
     temperature,
     maxRetries: 0,
     configuration: {
