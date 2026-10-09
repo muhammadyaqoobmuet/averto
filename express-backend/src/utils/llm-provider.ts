@@ -45,8 +45,7 @@ export function getGroqLLM(temperature = 0.2): ChatOpenAI {
     temperature,
     maxRetries: 0, // Handled externally via fallback chain
     configuration: {
-      baseURL:  process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
-,
+      baseURL: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
     },
   });
 }
