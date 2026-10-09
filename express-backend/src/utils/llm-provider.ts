@@ -73,7 +73,7 @@ export function getGroqFastLLM(temperature = 0.1): ChatOpenAI {
  */
 export function getGeminiLLM(temperature = 0.2): ChatGoogleGenerativeAI {
   return new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
+    model: "gemini-3.8-flash",
     temperature,
     apiKey: process.env.GEMINI_API_KEY,
     maxRetries: 0, // We handle fallback manually

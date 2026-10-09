@@ -71,17 +71,15 @@ model CrawlPage {
 }
 
 model Chunk {
-  id          String                   @id @default(uuid())
-  chatbotId   String
-  pageId      String
-  content     String
-  heading     String?
-  embedding   Unsupported("vector")?
-  createdAt   DateTime                 @default(now())
-  chatbot     Chatbot                  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-  page        CrawlPage                @relation(fields: [pageId], references: [id], onDelete: Cascade)
-
-  @@index([embedding], map: "chunk_embedding_hnsw_idx")
+  id        String                       @id @default(uuid())
+  chatbotId String
+  pageId    String
+  content   String
+  heading   String?
+  embedding Unsupported("vector(1024)")?
+  createdAt DateTime                     @default(now())
+  chatbot   Chatbot                      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  page      CrawlPage                    @relation(fields: [pageId], references: [id], onDelete: Cascade)
 }
 
 model Conversation {
@@ -120,5 +118,5 @@ model RefreshToken {
   tokenHash String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete:Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
