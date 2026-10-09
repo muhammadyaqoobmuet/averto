@@ -78,6 +78,7 @@ services:
       - GROQ_API_KEY_1=${GROQ_API_KEY_1}
       - GROQ_API_KEY_2=${GROQ_API_KEY_2}
       - GROQ_API_KEY_3=${GROQ_API_KEY_3}
+      - GROQ_BASE_URL=${GROQ_BASE_URL}
     depends_on:
       postgres:
         condition: service_healthy
