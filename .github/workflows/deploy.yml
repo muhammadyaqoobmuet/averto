@@ -1,80 +1,38 @@
-name: Deploy to DigitalOcean
+name: Deploy to Azure
 
+# Push to main = deploy. Nothing else triggers it.
 on:
   push:
     branches: [main]
+  # Lets you re-run a deploy from the Actions tab without pushing a no-op commit.
   workflow_dispatch:
 
-env:
-  REGISTRY: registry.digitalocean.com
-  IMAGE_PREFIX: averto
+# Never let two deploys race. If a push lands while one is running, queue it
+# rather than cancelling — cancelling mid-build can leave the server in a
+# half-updated state, which is far worse than waiting a few minutes.
+concurrency:
+  group: averto-production
+  cancel-in-progress: false
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_TOKEN }}
-
-      - name: Log in to DO Container Registry
-        run: doctl registry login --expiry-seconds 600
-
-      - name: Build and push crawler
-        uses: docker/build-push-action@v6
-        with:
-          context: ./python-crawlling-backend
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/crawler:latest
-
-      - name: Build and push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./express-backend
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
-
-      - name: Build and push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./nextjs-frontend
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
-
   deploy:
-    needs: build-and-push
+    name: Deploy to Azure VM
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # Whole job ceiling. The server-side build is ~4 min; 20 leaves room for a
+    # slow runner or one extra rebuild during a rollback.
+    timeout-minutes: 20
 
     steps:
-      - name: Deploy to Droplet
-        uses: appleboy/ssh-action@v1
+      - name: Deploy
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            # First time: install Docker if missing
-            if ! command -v docker &> /dev/null; then
-              curl -fsSL https://get.docker.com | sh
-            fi
-
-            # First time: clone repo if missing
-            if [ ! -d "/opt/averto/.git" ]; then
-              git clone https://github.com/muhammadyaqoobmuet/averto.git /opt/averto
-            fi
-
-            cd /opt/averto
-            git pull origin main
-
-            # Login to registry and deploy
-            doctl registry login --expiry-seconds 600
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker compose run --rm backend npx prisma migrate deploy
-            docker image prune -f
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_SSH_USER }}
+          key: ${{ secrets.AZURE_SSH_KEY }}
+          # Strict host checking, pinned to this VM's key. Without a
+          # fingerprint, a DNS hijack or a rebuilt VM could silently become the
+          # deploy target and receive your code. Get yours with:
+          #   ssh-keyscan -t ed25519 104.214.186.193 | ssh-keygen -lf -
+          fingerprint: ${{ secrets.AZURE_SSH_FINGERPRINT }}
+          port: ${{ secrets.AZURE_SSH_PORT || 22 }}
+          script: /usr/local/bin/averto-deploy
