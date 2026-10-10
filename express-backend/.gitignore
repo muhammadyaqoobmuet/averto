@@ -1,0 +1,4 @@
+
+# crawl debug dumps (development only)
+pages_*.json
+meta_*.json

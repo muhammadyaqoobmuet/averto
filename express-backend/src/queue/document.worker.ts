@@ -2,6 +2,8 @@ import { Worker, Job } from 'bullmq';
 import prisma from '../lib/prisma';
 import { downloadFile, extractTextFromFile, detectContentType } from '../services/document.service';
 import { indexPageContent } from '../services/indexing.service';
+import { invalidateChatbotCache } from '../services/retrieval.service';
+import { invalidateChunkCount } from '../controllers/chat.controller';
 import { logger } from '../utils/logger';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -65,6 +67,13 @@ export const documentWorker = new Worker('document-queue', async (job: Job) => {
         });
 
         logger.info(`Document indexed: ${fileName} → ${indexed} chunks`);
+
+        // New chunks landed, so cached retrieval results for this bot now
+        // reference a stale corpus. Drop both caches so the new content is
+        // searchable on the very next question.
+        await invalidateChatbotCache(chatbotId);
+        invalidateChunkCount(chatbotId);
+
         return { chunks: indexed, pageId: pageRecord.id };
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Document indexing failed';

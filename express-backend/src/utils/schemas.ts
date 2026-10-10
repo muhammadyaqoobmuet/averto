@@ -55,7 +55,10 @@ export const uploadDocumentSchema = z.object({
 });
 
 export const chatRequestSchema = z.object({
-  query: z.string().min(1),
-  sessionId: z.string().optional(),
+  // 1000 chars is far beyond any real question and keeps a pasted
+  // multi-megabyte payload from being forwarded to the embedding API.
+  query: z.string().trim().min(1).max(1000),
+  sessionId: z.string().trim().max(200).optional(),
   apiKey: z.string().uuid(),
+  stream: z.boolean().optional(),
 });

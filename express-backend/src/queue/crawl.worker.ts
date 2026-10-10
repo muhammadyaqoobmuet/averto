@@ -2,6 +2,8 @@ import { Worker, Job } from "bullmq";
 import axios from "axios";
 import prisma from "../lib/prisma";
 import { indexPageContent } from "../services/indexing.service";
+import { invalidateChatbotCache } from "../services/retrieval.service";
+import { invalidateChunkCount } from "../controllers/chat.controller";
 import { logger } from "../utils/logger";
 import fs from "fs";
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
@@ -70,13 +72,22 @@ export const crawlWorker = new Worker(
       );
 
       const pages = response.data?.pages;
-      const meta = response.data?.meta;   
-      
-      // STORE THESE ON fILES
-      await Promise.all([
-        fs.writeFileSync(`pages_${chatbotId}.json`, JSON.stringify(pages)),
-        fs.writeFileSync(`meta_${chatbotId}.json`, JSON.stringify(meta)),
-      ]);
+      const meta = response.data?.meta;
+
+      // Debug dump of the raw crawl response, development only.
+      //
+      // Previously this ran unconditionally, writing the FULL markdown of every
+      // crawled page to the working directory on every crawl. A 200-page site
+      // produced a ~1 MB file per run, never cleaned up, so the disk grew
+      // without bound and complete scraped site content accumulated on disk
+      // outside any retention policy.
+      if (process.env.NODE_ENV === "development" && process.env.CRAWL_DEBUG_DUMP) {
+        await Promise.all([
+          fs.promises.writeFile(`pages_${chatbotId}.json`, JSON.stringify(pages)),
+          fs.promises.writeFile(`meta_${chatbotId}.json`, JSON.stringify(meta)),
+        ]);
+        logger.debug(`[CrawlWorker] Debug dump written for bot ${chatbotId}`);
+      }
 
       if (!pages || pages.length === 0) {
         throw new Error(
@@ -172,6 +183,13 @@ export const crawlWorker = new Worker(
           },
         },
       });
+
+      // The chunk set is now completely different from whatever was indexed
+      // before this crawl, so any cached retrieval answer for this bot would
+      // point at deleted content. Drop it — and the cached chunk count, so the
+      // controller doesn't keep reporting the pre-crawl count for up to 60 s.
+      await invalidateChatbotCache(chatbotId);
+      invalidateChunkCount(chatbotId);
 
       logger.info(
         `[CrawlWorker] SUCCESS: Bot ${chatbotId}. ${totalChunks} vectors from ${pagesIndexed} pages.`,
