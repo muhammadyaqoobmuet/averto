@@ -29,3 +29,7 @@ __pycache__/
 # misc
 .DS_Store
 *.tsbuildinfo
+
+# SSH private keys — NEVER commit these
+*.pem
+*.key
