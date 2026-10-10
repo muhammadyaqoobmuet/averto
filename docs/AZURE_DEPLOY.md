@@ -381,11 +381,11 @@ server {
         chunked_transfer_encoding on;
     }
 
-    # ── Widget assets served straight from the API ──────────────────────────
-    location = /widget.js {
-        proxy_pass http://averto_backend;
-        proxy_set_header Host $host;
-    }
+    # /widget.js needs no special block: it is a static file in
+    # nextjs-frontend/public/, so the frontend serves it at /widget.js and the
+    # `location /` block below routes it correctly. Do NOT proxy it to the
+    # backend — the backend does not serve it, and doing so returns 404, which
+    # breaks the embeddable widget on every customer site.
 
     location = /api/chat {
         limit_req zone=averto_limit burst=20 nodelay;
